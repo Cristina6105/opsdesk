@@ -1,0 +1,1993 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>tarwi — OpsDesk</title>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{
+  --pg:#095246;--zest:#EEFF76;--soil:#44220A;--fw:#FFFFF8;--pink:#EF8FBF;
+  --bg:#FFFFF8;--bg2:#F4F9EC;--bg3:#EBF3E2;--bg4:#D6E8C8;
+  --sb:#095246;--sbb:rgba(238,255,118,.15);
+  --tx:#095246;--tx2:#2e5e52;--tx3:#6a8a82;
+  --bd:rgba(9,82,70,.1);--bd2:rgba(9,82,70,.2);
+  --l1:#2e8b57;--l1b:rgba(46,139,87,.1);--l1d:rgba(46,139,87,.3);
+  --l2:#c17f00;--l2b:rgba(193,127,0,.1);--l2d:rgba(193,127,0,.3);
+  --l3:#b82c2c;--l3b:rgba(184,44,44,.1);--l3d:rgba(184,44,44,.3);
+  --r:8px;--rl:14px;
+  --ff:'Instrument Sans',sans-serif;--fm:'DM Mono',monospace;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:13px}
+body{background:var(--bg);color:var(--tx);font-family:var(--ff);min-height:100vh;line-height:1.5}
+::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--bg4);border-radius:3px}
+
+/* LAYOUT */
+.app{display:flex;min-height:100vh}
+.sidebar{width:210px;flex-shrink:0;background:var(--sb);border-right:1px solid var(--sbb);padding:24px 0;display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto}
+.logo{padding:0 20px 20px;border-bottom:1px solid var(--sbb);margin-bottom:16px}
+.logo-w{font-family:var(--ff);font-size:24px;font-weight:700;color:var(--zest);letter-spacing:-1px;line-height:1}
+.logo-s{font-size:9px;color:rgba(238,255,118,.45);letter-spacing:.07em;text-transform:uppercase;margin-top:3px}
+.ni{padding:8px 20px;cursor:pointer;color:rgba(255,255,248,.5);font-size:12px;display:flex;align-items:center;gap:9px;border-left:2px solid transparent;transition:all .15s;user-select:none}
+.ni:hover{color:var(--fw);background:rgba(238,255,118,.07)}
+.ni.active{color:var(--zest);border-left-color:var(--zest);background:rgba(238,255,118,.1)}
+.ni svg{width:14px;height:14px;flex-shrink:0;opacity:.7}
+.ni .alert-pip{background:var(--l3);color:#fff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:10px;margin-left:auto;font-family:var(--fm)}
+.sf{margin-top:auto;padding:14px 20px 0;border-top:1px solid var(--sbb)}
+.sf-l{font-size:10px;color:rgba(255,255,248,.3);line-height:1.8}
+.sf-v{font-family:var(--fm);font-size:11px;color:rgba(238,255,118,.55)}
+.sf-clr{margin-top:8px;background:none;border:none;cursor:pointer;color:rgba(255,255,248,.2);font-size:10px;padding:0;font-family:var(--ff);transition:color .15s}
+.sf-clr:hover{color:rgba(255,255,248,.5)}
+.main{flex:1;overflow-x:hidden;min-width:0}
+.page{display:none;padding:28px 32px;max-width:100%}
+.page.active{display:block}
+.pg-title{font-size:22px;font-weight:700;color:var(--pg);margin-bottom:3px;letter-spacing:-.4px}
+.pg-sub{font-size:12px;color:var(--tx3);margin-bottom:22px}
+
+/* BUTTONS */
+.btn{padding:6px 13px;border-radius:var(--r);font-family:var(--ff);font-size:12px;font-weight:500;cursor:pointer;border:1.5px solid;transition:all .15s;white-space:nowrap;display:inline-flex;align-items:center;gap:4px}
+.btn-g{background:var(--bg);color:var(--tx2);border-color:var(--bd2)}.btn-g:hover{background:var(--bg3);color:var(--tx)}
+.btn-a{background:var(--pg);color:var(--zest);border-color:var(--pg)}.btn-a:hover{background:#073d34}
+.btn-z{background:var(--zest);color:var(--pg);border-color:var(--zest);font-weight:700}.btn-z:hover{background:#d9ef5c}
+.btn-sm{padding:4px 11px;font-size:11px}
+.btn-xs{padding:2px 8px;font-size:10px}
+.btn-l2{background:var(--l2b);color:var(--l2);border-color:var(--l2d)}.btn-l2:hover{background:rgba(193,127,0,.2)}
+.btn-l3{background:var(--l3b);color:var(--l3);border-color:var(--l3d)}.btn-l3:hover{background:rgba(184,44,44,.2)}
+
+/* FORMS */
+input[type=text],input[type=email],textarea,select{background:var(--bg);border:1.5px solid var(--bd2);border-radius:var(--r);color:var(--tx);font-family:var(--ff);font-size:12px;outline:none;transition:border-color .15s}
+input[type=text]:focus,textarea:focus,select:focus{border-color:var(--pg)}
+input[type=text]{padding:7px 11px;width:100%}
+textarea{padding:9px 11px;width:100%;resize:vertical}
+select{padding:6px 9px;cursor:pointer}
+input[type=checkbox]{accent-color:var(--pg);width:13px;height:13px;cursor:pointer;flex-shrink:0}
+
+/* UPLOAD */
+.upload-zone{border:2px dashed var(--bd2);border-radius:var(--rl);padding:36px 24px;text-align:center;background:var(--bg2);cursor:pointer;transition:all .2s;margin-bottom:20px}
+.upload-zone:hover,.upload-zone.drag{border-color:var(--pg);background:rgba(9,82,70,.04)}
+.upload-ok{display:none;margin-top:10px;background:var(--l1b);border:1px solid var(--l1d);color:var(--l1);padding:4px 12px;border-radius:20px;font-size:11px;display:inline-flex;align-items:center;gap:5px}
+
+/* METRICS */
+.metrics{display:grid;grid-template-columns:repeat(5,1fr);gap:11px;margin-bottom:18px}
+.mcard{background:var(--bg);border:1.5px solid var(--bd);border-radius:var(--rl);padding:14px 16px;position:relative;overflow:hidden}
+.mcard::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.mcard.tot::before{background:var(--pg)}.mcard.lv1::before{background:var(--l1)}.mcard.lv2::before{background:var(--l2)}.mcard.lv3::before{background:var(--l3)}.mcard.err::before{background:var(--pink)}
+.mcard-l{font-size:9px;color:var(--tx3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:5px;font-weight:600}
+.mcard-n{font-family:var(--fm);font-size:26px;font-weight:500;line-height:1}
+.mcard.tot .mcard-n{color:var(--pg)}.mcard.lv1 .mcard-n{color:var(--l1)}.mcard.lv2 .mcard-n{color:var(--l2)}.mcard.lv3 .mcard-n{color:var(--l3)}.mcard.err .mcard-n{color:var(--pink)}
+.mcard-s{font-size:10px;color:var(--tx3);margin-top:4px}
+.mcard-pct{position:absolute;top:13px;right:13px;font-size:10px;font-family:var(--fm);background:var(--bg3);padding:2px 6px;border-radius:20px;color:var(--tx3)}
+
+/* SLA */
+.sla-card{background:var(--pg);border-radius:var(--rl);padding:16px 20px;margin-bottom:18px}
+.sla-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.sla-t{font-size:12px;font-weight:500;color:rgba(255,255,248,.65)}
+.sla-v{font-family:var(--fm);font-size:20px;color:var(--zest)}
+.sla-bg{height:7px;background:rgba(255,255,248,.15);border-radius:4px;overflow:hidden;margin-bottom:6px}
+.sla-bar{height:100%;border-radius:4px;transition:width .6s;background:var(--zest)}
+.sla-leg{display:flex;gap:14px;font-size:10px;color:rgba(255,255,248,.45)}
+.sla-dot{width:6px;height:6px;border-radius:50%;display:inline-block;margin-right:3px;vertical-align:middle}
+
+/* TABS */
+.tabs{display:flex;gap:2px;border-bottom:1.5px solid var(--bd);margin-bottom:14px}
+.tab{padding:7px 14px 9px;cursor:pointer;font-size:12px;color:var(--tx3);border-bottom:2px solid transparent;margin-bottom:-1.5px;transition:all .15s;display:flex;align-items:center;gap:5px;user-select:none;font-weight:500}
+.tab:hover{color:var(--tx)}.tab.active{color:var(--pg);border-bottom-color:var(--pg)}
+.tbadge{font-size:10px;font-family:var(--fm);padding:1px 6px;border-radius:10px;background:var(--bg3)}
+.tab.active .tbadge{background:rgba(9,82,70,.12);color:var(--pg)}
+
+/* TABLE */
+.tw{overflow-x:auto;border-radius:var(--rl);border:1.5px solid var(--bd)}
+table{width:100%;border-collapse:collapse}
+thead tr{border-bottom:1.5px solid var(--bd)}
+thead th{padding:9px 10px;text-align:left;font-size:9px;color:var(--tx3);font-weight:700;text-transform:uppercase;letter-spacing:.07em;background:var(--bg2);white-space:nowrap}
+tbody tr{border-bottom:1px solid var(--bd);transition:background .1s}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:var(--bg2)}
+tbody tr.err-row{background:rgba(239,143,191,.07)}
+tbody tr.err-row:hover{background:rgba(239,143,191,.12)}
+tbody td{padding:8px 10px;font-size:12px;color:var(--tx);vertical-align:middle}
+.td-m{color:var(--tx3);font-size:11px}
+.tdmono{font-family:var(--fm);font-size:11px;color:var(--tx2)}
+.note-ta{background:transparent;border:none;outline:none;color:var(--tx2);font-family:var(--ff);font-size:11px;width:100%;min-width:90px;resize:none;overflow:hidden;line-height:1.4}
+.note-ta::placeholder{color:var(--tx3)}
+.ctog{width:26px;height:15px;border-radius:8px;border:none;cursor:pointer;position:relative;transition:background .2s;flex-shrink:0}
+.ctog::after{content:'';position:absolute;width:11px;height:11px;border-radius:50%;background:#fff;top:2px;left:2px;transition:transform .2s}
+.ctog.on{background:var(--l1)}.ctog.on::after{transform:translateX(11px)}.ctog.off{background:var(--bg4)}
+.st-sel{background:var(--bg2);border:1.5px solid var(--bd2);border-radius:6px;color:var(--tx);font-family:var(--ff);font-size:11px;padding:3px 7px;cursor:pointer;outline:none}
+.lvl-badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;border:1px solid;white-space:nowrap}
+.lv1-b{background:var(--l1b);color:var(--l1);border-color:var(--l1d)}
+.lv2-b{background:var(--l2b);color:var(--l2);border-color:var(--l2d)}
+.lv3-b{background:var(--l3b);color:var(--l3);border-color:var(--l3d)}
+.err-badge{background:rgba(239,143,191,.15);color:#a0186a;border:1px solid rgba(239,143,191,.4);display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;white-space:nowrap}
+
+/* SEL BAR */
+.sel-bar{display:none;background:var(--pg);border-radius:var(--rl);padding:10px 14px;margin-bottom:12px;align-items:center;gap:10px;flex-wrap:wrap}
+.sel-bar.show{display:flex}
+.sel-cnt{font-size:12px;color:var(--zest);font-weight:700}
+.sel-div{width:1px;height:16px;background:rgba(238,255,118,.3);flex-shrink:0}
+.sel-bar select{background:rgba(255,255,248,.1);border-color:rgba(238,255,118,.3);color:var(--fw);font-size:11px}
+.sel-bar select option{background:var(--pg)}
+
+/* QS BAR */
+.qs-bar{background:var(--bg2);border:1.5px solid var(--bd);border-radius:var(--rl);padding:10px 14px;margin-bottom:12px;display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.qs-l{font-size:9px;color:var(--tx3);font-weight:700;text-transform:uppercase;letter-spacing:.07em;white-space:nowrap;margin-right:2px}
+.search-box{flex:1;min-width:140px;background:var(--bg);border:1.5px solid var(--bd2);border-radius:var(--r);padding:6px 10px;color:var(--tx);font-family:var(--ff);font-size:12px;outline:none;transition:border-color .15s}
+.search-box:focus{border-color:var(--pg)}
+.search-box::placeholder{color:var(--tx3)}
+
+/* MODAL */
+.overlay{position:fixed;inset:0;background:rgba(9,82,70,.35);backdrop-filter:blur(3px);z-index:100;display:none;align-items:center;justify-content:center;padding:16px}
+.overlay.open{display:flex}
+.modal{background:var(--fw);border:1.5px solid var(--bd2);border-radius:var(--rl);width:620px;max-width:100%;max-height:92vh;overflow-y:auto;padding:22px 26px;animation:mIn .17s ease}
+.modal-lg{width:820px}
+@keyframes mIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.modal-title{font-size:18px;font-weight:700;color:var(--pg);margin-bottom:3px;letter-spacing:-.3px}
+.modal-sub{font-size:12px;color:var(--tx3);margin-bottom:16px}
+.modal-label{font-size:9px;text-transform:uppercase;letter-spacing:.07em;color:var(--tx3);margin-bottom:5px;font-weight:700}
+.modal-footer{display:flex;justify-content:flex-end;gap:8px;margin-top:16px;padding-top:14px;border-top:1.5px solid var(--bd)}
+.mprev{background:var(--bg2);border:1.5px solid var(--bd);border-radius:var(--r);padding:12px;font-size:11px;line-height:1.8;color:var(--tx2);white-space:pre-wrap;max-height:160px;overflow-y:auto}
+
+/* EMAIL BRAND */
+.epw{background:#fff;border:1.5px solid var(--bd);border-radius:var(--r);overflow:hidden;margin-bottom:10px}
+.ehb{background:var(--pg);padding:13px 17px;display:flex;align-items:center;gap:8px}
+.elt{font-family:var(--ff);font-size:17px;font-weight:700;color:var(--zest);letter-spacing:-.5px}
+.etag{font-size:9px;color:rgba(238,255,118,.55);letter-spacing:.07em;text-transform:uppercase}
+.ebp{padding:14px 18px;font-size:12px;line-height:1.9;color:#333;white-space:pre-wrap;max-height:180px;overflow-y:auto;font-family:Georgia,serif}
+.efb{background:var(--bg2);padding:8px 17px;border-top:1px solid var(--bd);font-size:9px;color:var(--tx3);text-align:center}
+
+/* VAR TAGS */
+.var-tag{background:rgba(9,82,70,.08);border:1.5px solid rgba(9,82,70,.2);color:var(--pg);padding:2px 8px;border-radius:6px;font-family:var(--fm);font-size:10px;cursor:pointer;transition:all .15s;display:inline-block;font-weight:500}
+.var-tag:hover{background:rgba(9,82,70,.15)}
+.vars{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px}
+
+/* PRODUCT PILLS */
+.prod-pill{display:inline-flex;align-items:center;gap:4px;padding:2px 7px;border-radius:12px;font-size:10px;background:var(--bg3);border:1px solid var(--bd);color:var(--tx2);margin:1px}
+.prod-pill .rm{cursor:pointer;color:var(--tx3);font-size:12px;line-height:1}
+.prod-pill .rm:hover{color:var(--l3)}
+
+/* HISTORY */
+.hist-line{position:absolute;left:7px;top:0;bottom:0;width:2px;background:var(--bd);border-radius:2px}
+.hist-ev{position:relative;padding:0 0 13px;display:flex;gap:9px;align-items:flex-start}
+.hist-ev:last-child{padding-bottom:0}
+.hist-dot{width:13px;height:13px;border-radius:50%;flex-shrink:0;margin-top:2px;border:2px solid var(--bg);box-shadow:0 0 0 2px currentColor;position:relative;z-index:1}
+.hist-dot.email,.hist-dot.email-col{background:var(--pg);color:var(--pg)}
+.hist-dot.status{background:var(--l2);color:var(--l2)}
+.hist-dot.note{background:var(--tx3);color:var(--tx3)}
+.hist-dot.call{background:var(--l1);color:var(--l1)}
+.hist-dot.manual{background:var(--pink);color:var(--pink)}
+.hist-dot.upload{background:var(--zest);color:#c9a800}
+.hist-dot.product{background:#7c3aed;color:#7c3aed}
+.hist-act{font-size:12px;font-weight:500;color:var(--tx)}
+.hist-det{font-size:10px;color:var(--tx3);margin-top:1px;line-height:1.5}
+.hist-ts{font-size:9px;color:var(--tx3);font-family:var(--fm);margin-top:2px}
+
+/* ALERTS */
+.alert-card{background:var(--bg);border:1.5px solid var(--bd);border-radius:var(--rl);padding:14px 18px;margin-bottom:12px}
+.alert-card.crit{border-left:4px solid var(--l3)}
+.alert-card.warn{border-left:4px solid var(--l2)}
+.alert-card.info{border-left:4px solid var(--pg)}
+.alert-hdr{display:flex;align-items:center;gap:8px;margin-bottom:5px}
+.alert-icon{font-size:16px}
+.alert-title{font-size:13px;font-weight:700;color:var(--tx)}
+.alert-count{font-size:11px;font-family:var(--fm);padding:1px 7px;border-radius:10px;background:var(--bg3)}
+.alert-sub{font-size:11px;color:var(--tx3);margin-bottom:8px}
+.alert-list-item{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--bd);font-size:11px}
+.alert-list-item:last-child{border-bottom:none}
+
+/* STATS */
+.sg{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.sc{background:var(--bg);border:1.5px solid var(--bd);border-radius:var(--rl);padding:17px}
+.sc-t{font-size:10px;color:var(--tx3);margin-bottom:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em}
+.bg{margin-bottom:9px}
+.bl{display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px}
+.bl span:first-child{color:var(--tx2)}.bl span:last-child{font-family:var(--fm);font-size:10px;color:var(--tx3)}
+.bt{height:6px;background:var(--bg3);border-radius:4px;overflow:hidden}
+.bf{height:100%;border-radius:4px;transition:width .6s}
+
+/* TOAST */
+.toast{position:fixed;bottom:22px;right:22px;background:var(--pg);border-radius:var(--r);padding:10px 15px;font-size:12px;color:var(--zest);font-weight:600;z-index:300;transform:translateY(70px);transition:transform .22s;pointer-events:none;max-width:340px;border:1px solid rgba(238,255,118,.3)}
+.toast.show{transform:translateY(0)}
+.toast.warn{background:var(--l2);color:#fff}
+
+/* EMPTY */
+.empty{text-align:center;padding:44px 20px;color:var(--tx3);font-size:12px}
+.empty-icon{font-size:32px;margin-bottom:8px}
+.empty-title{font-size:13px;color:var(--tx2);margin-bottom:4px;font-weight:600}
+
+/* PRODUCT SELECT DROPDOWN */
+.prod-dropdown{position:relative;display:inline-block}
+.prod-menu{display:none;position:absolute;top:100%;left:0;z-index:50;background:var(--fw);border:1.5px solid var(--bd2);border-radius:var(--r);min-width:200px;box-shadow:0 4px 16px rgba(9,82,70,.12);padding:4px 0}
+.prod-menu.open{display:block}
+.prod-menu label{display:flex;align-items:center;gap:7px;padding:5px 11px;font-size:11px;cursor:pointer;transition:background .1s;color:var(--tx2)}
+.prod-menu label:hover{background:var(--bg2)}
+
+/* ALERT TYPE BUTTONS */
+.alert-type-btn{padding:5px 12px;border-radius:20px;font-size:11px;font-weight:500;cursor:pointer;border:1.5px solid var(--bd2);background:var(--bg);color:var(--tx2);font-family:var(--ff);transition:all .15s}
+.alert-type-btn:hover{background:var(--bg3);color:var(--tx)}
+.alert-type-btn.active{background:var(--pg);color:var(--zest);border-color:var(--pg)}
+
+/* ALERT ITEMS */
+.alert-item{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border-bottom:1px solid var(--bd);background:var(--bg)}
+.alert-item:last-child{border-bottom:none}
+.alert-item.past{opacity:.5}
+.alert-item.due{background:rgba(193,127,0,.07);border-left:3px solid var(--l2)}
+.alert-item.overdue{background:rgba(184,44,44,.07);border-left:3px solid var(--l3)}
+.alert-dot-bell{font-size:18px;flex-shrink:0;margin-top:1px}
+.alert-item-date{font-family:var(--fm);font-size:11px;font-weight:600;color:var(--tx)}
+.alert-item-type{font-size:10px;padding:1px 7px;border-radius:10px;background:var(--bg3);color:var(--tx2);font-weight:600;display:inline-block;margin-top:2px}
+.alert-item-note{font-size:11px;color:var(--tx3);margin-top:3px;line-height:1.4}
+
+@media(max-width:900px){.sidebar{display:none}.metrics{grid-template-columns:repeat(2,1fr)}.sg{grid-template-columns:1fr}.page{padding:16px}}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- SIDEBAR -->
+<nav class="sidebar">
+  <div class="logo">
+    <div class="logo-w">tarwi</div>
+    <div class="logo-s">OpsDesk</div>
+  </div>
+  <div class="ni active" onclick="nav('dash')">
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="6" height="6" rx="1.5"/><rect x="9" y="1" width="6" height="6" rx="1.5"/><rect x="1" y="9" width="6" height="6" rx="1.5"/><rect x="9" y="9" width="6" height="6" rx="1.5"/></svg>
+    Dashboard
+  </div>
+  <div class="ni" onclick="nav('orders')">
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4h12M2 8h8M2 12h5"/></svg>
+    Encomendas
+  </div>
+  <div class="ni" onclick="nav('alerts')">
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 2a5 5 0 0 1 5 5v3l1 1H2l1-1V7a5 5 0 0 1 5-5zM6.5 13.5a1.5 1.5 0 0 0 3 0"/></svg>
+    Alertas
+    <span class="alert-pip" id="alertPip" style="display:none">0</span>
+  </div>
+  <div class="ni" onclick="nav('templates')">
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="12" height="12" rx="2"/><path d="M5 6h6M5 9h4"/></svg>
+    Templates
+  </div>
+  <div class="ni" onclick="nav('history')">
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l2 2"/></svg>
+    Histórico
+  </div>
+  <div class="ni" onclick="nav('stats')">
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 13L6 8l3 3 5-6"/></svg>
+    Estatísticas
+  </div>
+  <div class="sf">
+    <div class="sf-l" id="lastUpd">Sem dados carregados</div>
+    <div class="sf-v" id="totalCnt">—</div>
+    <div id="gmailStatus" style="margin-top:8px;font-size:10px;color:rgba(255,255,248,.3);display:flex;align-items:center;gap:5px">
+      <span id="gmailDot" style="width:6px;height:6px;border-radius:50%;background:rgba(255,255,248,.2);flex-shrink:0;display:inline-block"></span>
+      <span id="gmailStatusText">Gmail não configurado</span>
+    </div>
+    <button class="sf-clr" style="margin-top:4px" onclick="openGmailSettings()">⚙ Configurar Gmail</button>
+    <button class="sf-clr" onclick="clearAll()">Limpar dados locais</button>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<main class="main">
+
+<!-- DASHBOARD -->
+<div id="pg-dash" class="page active">
+  <div class="pg-title">Dashboard</div>
+  <div class="pg-sub">Visão geral das encomendas tarwi</div>
+  <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fi').click()">
+    <div style="font-size:28px;margin-bottom:8px">📦</div>
+    <div style="font-size:14px;font-weight:600;color:var(--pg);margin-bottom:4px">Carregar export diário</div>
+    <div style="font-size:11px;color:var(--tx3)">Arraste ou clique — suporta <strong style="color:var(--pg)">.CSV</strong> e <strong style="color:var(--pg)">.XLSX</strong></div>
+    <div class="upload-ok" id="uploadOk">✓ <span id="uploadName"></span></div>
+    <input type="file" id="fi" accept=".csv,.xlsx,.xls" onchange="handleFile(event)" style="display:none">
+  </div>
+  <div class="metrics">
+    <div class="mcard tot"><div class="mcard-l">Total atraso</div><div class="mcard-n" id="s-tot">0</div><div class="mcard-s">encomendas</div></div>
+    <div class="mcard lv1"><div class="mcard-l">Nível 1</div><div class="mcard-n" id="s-l1">0</div><div class="mcard-s">&lt; 2 dias úteis</div><div class="mcard-pct" id="p-l1">0%</div></div>
+    <div class="mcard lv2"><div class="mcard-l">Nível 2</div><div class="mcard-n" id="s-l2">0</div><div class="mcard-s">2–7 dias úteis</div><div class="mcard-pct" id="p-l2">0%</div></div>
+    <div class="mcard lv3"><div class="mcard-l">Nível 3</div><div class="mcard-n" id="s-l3">0</div><div class="mcard-s">&gt; 7 dias úteis</div><div class="mcard-pct" id="p-l3">0%</div></div>
+    <div class="mcard err"><div class="mcard-l">Erros Sync</div><div class="mcard-n" id="s-err">0</div><div class="mcard-s">sem Order Nr</div></div>
+  </div>
+  <div class="sla-card">
+    <div class="sla-hdr"><span class="sla-t">Nível de SLA Operacional</span><span class="sla-v" id="slaVal">—</span></div>
+    <div class="sla-bg"><div class="sla-bar" id="slaBar" style="width:0%"></div></div>
+    <div class="sla-leg">
+      <span><span class="sla-dot" style="background:#4ade80"></span>≥ 80% Bom</span>
+      <span><span class="sla-dot" style="background:var(--zest)"></span>50–80% Atenção</span>
+      <span><span class="sla-dot" style="background:var(--pink)"></span>&lt; 50% Crítico</span>
+    </div>
+  </div>
+  <div id="noData" class="empty">
+    <div class="empty-icon">🌱</div>
+    <div class="empty-title">Sem dados</div>
+    Carregue um ficheiro CSV ou XLSX para começar<br><br>
+    <button class="btn btn-a btn-sm" onclick="loadDemo()">Carregar dados de demonstração</button>
+  </div>
+</div>
+
+<!-- ENCOMENDAS -->
+<div id="pg-orders" class="page">
+  <div class="pg-title">Encomendas</div>
+  <div class="pg-sub">Gestão e acompanhamento de todas as encomendas</div>
+
+  <div class="sel-bar" id="selBar">
+    <span class="sel-cnt"><span id="selCnt">0</span> selecionada(s)</span>
+    <div class="sel-div"></div>
+    <span style="font-size:11px;color:rgba(255,255,248,.6)">Template:</span>
+    <select id="bulkTplSel" style="font-size:11px;padding:4px 8px"></select>
+    <button class="btn btn-z btn-sm" onclick="openBulkDirect()">✉ Enviar</button>
+    <button class="btn btn-sm" style="background:rgba(255,255,248,.1);color:var(--fw);border-color:rgba(255,255,248,.2)" onclick="openBulkReview()">👁 Rever</button>
+    <button onclick="clearSel()" style="margin-left:auto;background:none;border:none;color:rgba(255,255,248,.4);cursor:pointer;font-size:17px;padding:0 3px">×</button>
+  </div>
+
+  <!-- STICKY FILTER + SCROLL HEADER -->
+  <div style="position:sticky;top:0;z-index:20;background:var(--bg);padding-bottom:10px;margin-bottom:0">
+
+    <!-- FILTER ROW -->
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:var(--bg2);border:1.5px solid var(--bd);border-radius:var(--rl);padding:10px 14px;margin-bottom:10px">
+      <span class="qs-l">Filtros:</span>
+
+      <input type="text" class="search-box" id="searchBox" placeholder="Pesquisar nome, email, nº..." oninput="renderOrders()" style="min-width:160px;flex:1">
+
+      <select id="fEstadoEnc" class="st-sel" style="font-size:11px;padding:5px 9px" onchange="renderOrders()">
+        <option value="">Estado Encomenda</option>
+        <option value="A caminho">🚚 A caminho</option>
+        <option value="Em picking">📦 Em picking</option>
+        <option value="Em packing">🗃 Em packing</option>
+        <option value="No centro operacional">🏭 No centro operacional</option>
+        <option value="Em espera">⏳ Em espera</option>
+        <option value="No ponto para levantamento">📍 No ponto para levantamento</option>
+        <option value="Entregue">✅ Entregue</option>
+        <option value="Devolvida">↩ Devolvida</option>
+        <option value="Cancelada">✕ Cancelada</option>
+        <option value="Preparada incidência">⚠ Preparada incidência</option>
+        <option value="Stock out">🔴 Stock out</option>
+      </select>
+
+      <select id="fDiasAtraso" class="st-sel" style="font-size:11px;padding:5px 9px" onchange="renderOrders()">
+        <option value="">Dias Atraso</option>
+        <option value="l1">N1 — &lt; 2 dias</option>
+        <option value="l2">N2 — 2 a 7 dias</option>
+        <option value="l3">N3 — &gt; 7 dias</option>
+        <option value="0">Sem atraso (resolvido)</option>
+      </select>
+
+      <select id="fEstadoAcao" class="st-sel" style="font-size:11px;padding:5px 9px" onchange="renderOrders()">
+        <option value="">Estado Ação</option>
+        <option value="pendente">⏳ Pendente</option>
+        <option value="tratado">✅ Tratado</option>
+        <option value="ligar">📞 Ligar</option>
+        <option value="contactado">✉ Contactado</option>
+        <option value="resolvido">🟢 Resolvido</option>
+      </select>
+
+      <button class="btn btn-g btn-xs" onclick="clearFilters()" style="color:var(--tx3)">✕ Limpar</button>
+      <div style="width:1px;height:20px;background:var(--bd);flex-shrink:0"></div>
+      <span class="qs-l" style="margin-right:0">Selecionar:</span>
+      <button class="btn btn-g btn-xs" onclick="qSel('all')">Todos</button>
+      <button class="btn btn-xs btn-l2" onclick="qSel('l2')">N2</button>
+      <button class="btn btn-xs btn-l3" onclick="qSel('l3')">N3</button>
+      <button class="btn btn-g btn-xs" onclick="qSel('noEmail')">Sem email</button>
+      <button class="btn btn-g btn-xs" onclick="qSel('sensitive')">Sensíveis</button>
+      <button class="btn btn-g btn-xs" onclick="qSel('none')" style="color:var(--tx3)">Limpar sel.</button>
+    </div>
+
+    <!-- TABS -->
+    <div class="tabs" style="margin-bottom:0;overflow-x:auto;white-space:nowrap;display:flex">
+      <div class="tab active" onclick="switchTab('all',this)">Todas <span class="tbadge" id="tb-all">0</span></div>
+      <div class="tab" onclick="switchTab('l2',this)"><span style="color:var(--l2)">●</span>N2 <span class="tbadge" id="tb-l2">0</span></div>
+      <div class="tab" onclick="switchTab('l3',this)"><span style="color:var(--l3)">●</span>N3 <span class="tbadge" id="tb-l3">0</span></div>
+      <div class="tab" onclick="switchTab('err',this)"><span style="color:var(--pink)">●</span>Erros sync <span class="tbadge" id="tb-err">0</span></div>
+      <div style="width:1px;background:var(--bd);margin:6px 4px;flex-shrink:0"></div>
+      <div class="tab" onclick="switchTab('pendente',this)">⏳ Pendente <span class="tbadge" id="tb-pendente">0</span></div>
+      <div class="tab" onclick="switchTab('tratado',this)">✅ Tratado <span class="tbadge" id="tb-tratado">0</span></div>
+      <div class="tab" onclick="switchTab('ligar',this)">📞 Ligar <span class="tbadge" id="tb-ligar">0</span></div>
+      <div class="tab" onclick="switchTab('resolvido',this)">🟢 Resolvido <span class="tbadge" id="tb-resolvido">0</span></div>
+    </div>
+  </div>
+
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 2px 8px;font-size:11px;color:var(--tx3)">
+    <span id="filterResultCount"></span>
+    <span style="font-size:10px;color:var(--tx3)">← Barra de deslocamento horizontal em baixo da tabela</span>
+  </div>
+
+  <!-- TABLE WRAPPER with horizontal scroll -->
+  <div style="overflow-x:auto;border-radius:var(--rl);border:1.5px solid var(--bd)">
+    <table style="min-width:1600px;width:100%;border-collapse:collapse">
+      <thead><tr>
+        <th style="width:30px;position:sticky;left:0;background:var(--bg2);z-index:2"><input type="checkbox" id="chkAll" onchange="chkAllRows(this)"></th>
+        <th style="position:sticky;left:30px;background:var(--bg2);z-index:2;min-width:90px">Nr Shopify</th>
+        <th style="min-width:100px">Order Number</th>
+        <th style="min-width:130px">Cliente</th>
+        <th style="width:60px">Nível</th>
+        <th style="min-width:100px">Data Encomenda</th>
+        <th style="min-width:100px">Delivery Date</th>
+        <th style="width:80px">Dias Atraso</th>
+        <th style="min-width:110px">Estado Encomenda</th>
+        <th style="width:80px">Emails</th>
+        <th style="min-width:120px">Últ. Comunicação</th>
+        <th style="width:90px">Prod. Adicionado</th>
+        <th style="min-width:160px">Qual Produto</th>
+        <th style="width:75px">Dynamics</th>
+        <th style="width:80px">Sensível</th>
+        <th style="min-width:130px">Estado Ação</th>
+        <th style="min-width:180px">Notas</th>
+        <th style="min-width:110px;position:sticky;right:0;background:var(--bg2);z-index:2">Ações</th>
+      </tr></thead>
+      <tbody id="ordersBody">
+        <tr><td colspan="18"><div class="empty"><div class="empty-icon">📋</div><div class="empty-title">Sem encomendas</div>Carregue um ficheiro no Dashboard</div></td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+<div id="pg-alerts" class="page">
+  <div class="pg-title">Alertas Diários</div>
+  <div class="pg-sub">Erros de sincronização, atrasos críticos e clientes por contactar</div>
+  <div id="alertsContent">
+    <div class="empty"><div class="empty-icon">🔔</div><div class="empty-title">Sem alertas</div>Carregue dados para ver alertas</div>
+  </div>
+</div>
+
+<!-- TEMPLATES -->
+<div id="pg-templates" class="page">
+  <div class="pg-title">Templates de E-mail</div>
+  <div class="pg-sub">Templates associados ao estado da encomenda — selecione automaticamente o template certo</div>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+    <div style="font-size:11px;color:var(--tx3)">Ativo: <span id="activeTplName" style="color:var(--pg);font-family:var(--fm);font-weight:600"></span></div>
+    <button class="btn btn-a btn-sm" onclick="openNewTpl()">+ Novo template</button>
+  </div>
+  <div style="background:var(--bg2);border:1.5px solid var(--bd);border-radius:var(--r);padding:10px 14px;margin-bottom:14px;font-size:11px;color:var(--tx3)">
+    💡 <strong style="color:var(--tx2)">Seleção automática:</strong> cada template pode ser associado a um estado da encomenda (ex: <em>Pending</em>, <em>Delayed</em>). Ao enviar email, o sistema escolhe o template do estado da encomenda. Variáveis disponíveis: <span style="font-family:var(--fm);color:var(--pg)">{{nome}}</span> e <span style="font-family:var(--fm);color:var(--pg)">{{id_encomenda}}</span>.
+  </div>
+  <div class="tw" style="margin-bottom:20px">
+    <table>
+      <thead><tr>
+        <th style="width:44px">Ativo</th>
+        <th>Nome</th>
+        <th style="width:160px">Estado associado</th>
+        <th style="width:180px">Assunto</th>
+        <th style="width:90px">Editado</th>
+        <th style="width:130px">Ações</th>
+      </tr></thead>
+      <tbody id="tplBody"></tbody>
+    </table>
+  </div>
+  <div id="tplEditor" style="display:none;background:var(--bg2);border:1.5px solid var(--bd);border-radius:var(--rl);padding:20px 22px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <div><div style="font-size:14px;font-weight:700;color:var(--pg)" id="edTitle">Novo template</div><div style="font-size:11px;color:var(--tx3);margin-top:1px" id="edSub"></div></div>
+      <div style="display:flex;gap:7px">
+        <button class="btn btn-g btn-sm" onclick="closeEditor()">Cancelar</button>
+        <button class="btn btn-a btn-sm" onclick="saveTpl()">Guardar</button>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 200px;gap:10px;margin-bottom:10px">
+      <div><div class="modal-label">Nome do template</div><input type="text" id="edName" placeholder="Ex: Atraso Crítico"></div>
+      <div><div class="modal-label">Assunto do e-mail</div><input type="text" id="edSubject" placeholder="Atualização da sua encomenda"></div>
+      <div>
+        <div class="modal-label">Estado da encomenda</div>
+        <select id="edStatus" style="width:100%;padding:7px 9px">
+          <option value="">Qualquer / padrão</option>
+          <option value="Pending">Pending</option>
+          <option value="Delayed">Delayed</option>
+          <option value="Processing">Processing</option>
+          <option value="Shipped">Shipped</option>
+          <option value="Cancelled">Cancelled</option>
+          <option value="nivel2">Nível 2 (2–7 dias)</option>
+          <option value="nivel3">Nível 3 (&gt;7 dias)</option>
+        </select>
+      </div>
+    </div>
+    <div style="margin-bottom:8px">
+      <div class="modal-label">Variáveis</div>
+      <div class="vars" style="margin-top:5px">
+        <span class="var-tag" onclick="edInsert('{{nome}}')">{{nome}}</span>
+        <span class="var-tag" onclick="edInsert('{{id_encomenda}}')">{{id_encomenda}}</span>
+        <span class="var-tag" onclick="edInsert('{{dias_atraso}}')">{{dias_atraso}}</span>
+        <span class="var-tag" onclick="edInsert('{{data_encomenda}}')">{{data_encomenda}}</span>
+        <span class="var-tag" onclick="edInsert('{{delivery_date}}')">{{delivery_date}}</span>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div>
+        <div class="modal-label" style="margin-bottom:6px">Corpo do e-mail</div>
+        <textarea id="edBody" style="min-height:260px;line-height:1.8" oninput="syncEdPrev()"></textarea>
+      </div>
+      <div>
+        <div class="modal-label" style="margin-bottom:6px">Pré-visualização com marca</div>
+        <div style="border:1.5px solid var(--bd);border-radius:var(--r);overflow:hidden">
+          <div style="background:var(--pg);padding:10px 14px;display:flex;align-items:center;gap:7px">
+            <span style="font-family:var(--ff);font-size:16px;font-weight:700;color:var(--zest);letter-spacing:-.5px">tarwi</span>
+            <span style="font-size:9px;color:rgba(238,255,118,.5);text-transform:uppercase;letter-spacing:.07em">The essential of plants, every day.</span>
+          </div>
+          <div id="edPrev" style="background:#fff;padding:13px;font-size:11px;line-height:1.9;color:#333;white-space:pre-wrap;min-height:180px;overflow-y:auto;max-height:300px;font-family:Georgia,serif"></div>
+          <div style="background:var(--bg2);padding:7px 14px;border-top:1px solid var(--bd);font-size:9px;color:var(--tx3);text-align:center">tarwi · The essential of plants, every day.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- HISTÓRICO -->
+<div id="pg-history" class="page">
+  <div class="pg-title">Histórico Global</div>
+  <div class="pg-sub">Todos os eventos registados por encomenda</div>
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+    <input type="text" id="histSearch" placeholder="Filtrar por encomenda, cliente ou evento..." style="flex:1;min-width:180px" oninput="renderHistoryPage()">
+    <select id="histFilter" style="padding:7px 10px" onchange="renderHistoryPage()">
+      <option value="all">Todos os eventos</option>
+      <option value="email">Emails</option>
+      <option value="status">Estados</option>
+      <option value="call">Ligações</option>
+      <option value="note">Notas</option>
+      <option value="product">Produtos</option>
+      <option value="manual">Manuais</option>
+    </select>
+    <button class="btn btn-g btn-sm" onclick="exportHistoryCSV()">⬇ Exportar CSV</button>
+  </div>
+  <div class="tw">
+    <table>
+      <thead><tr>
+        <th style="width:120px">Data/Hora</th>
+        <th style="width:110px">Encomenda</th>
+        <th>Cliente</th>
+        <th style="width:85px">Tipo</th>
+        <th>Descrição</th>
+      </tr></thead>
+      <tbody id="histPageBody">
+        <tr><td colspan="5"><div class="empty"><div class="empty-icon">🕐</div><div class="empty-title">Sem histórico</div></div></td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ESTATÍSTICAS -->
+<div id="pg-stats" class="page">
+  <div class="pg-title">Estatísticas</div>
+  <div class="pg-sub">Performance operacional</div>
+  <div class="sg">
+    <div class="sc"><div class="sc-t">Distribuição por nível</div><div id="stDistrib"><div class="empty" style="padding:16px"><div class="empty-title">Sem dados</div></div></div></div>
+    <div class="sc"><div class="sc-t">Ações realizadas</div><div id="stActions"><div class="empty" style="padding:16px"><div class="empty-title">Sem dados</div></div></div></div>
+  </div>
+  <div class="sc" style="margin-bottom:14px"><div class="sc-t">SLA e rastreio</div><div id="stSLA"><div class="empty" style="padding:16px"><div class="empty-title">Sem dados</div></div></div></div>
+</div>
+
+</main>
+</div>
+
+<!-- ── MODALS ── -->
+
+<!-- EMAIL -->
+<div class="overlay" id="emailModal">
+  <div class="modal">
+    <div class="modal-title">Enviar E-mail</div>
+    <div class="modal-sub" id="emailSub"></div>
+    <div class="modal-label">Assunto</div>
+    <input type="text" id="emailSubj" style="margin-bottom:10px">
+    <div class="modal-label">Corpo do e-mail</div>
+    <div class="vars" style="margin-top:5px">
+      <span class="var-tag" onclick="insModalVar('{{nome}}')">{{nome}}</span>
+      <span class="var-tag" onclick="insModalVar('{{id_encomenda}}')">{{id_encomenda}}</span>
+      <span class="var-tag" onclick="insModalVar('{{dias_atraso}}')">{{dias_atraso}}</span>
+    </div>
+    <textarea id="emailBody" style="min-height:150px;line-height:1.8;margin-bottom:10px" oninput="document.getElementById('emailPrev').textContent=this.value"></textarea>
+    <div class="modal-label" style="margin-bottom:6px">Pré-visualização tarwi</div>
+    <div class="epw">
+      <div class="ehb"><div><div class="elt">tarwi</div><div class="etag">The essential of plants, every day.</div></div></div>
+      <div class="ebp" id="emailPrev"></div>
+      <div class="efb">tarwi · tarwi.com</div>
+    </div>
+    <div id="gmailSendStatus" style="display:none;padding:8px 12px;border-radius:var(--r);font-size:11px;margin-bottom:10px"></div>
+    <div class="modal-footer">
+      <button class="btn btn-g" onclick="closeModal('emailModal')">Cancelar</button>
+      <button class="btn btn-a" id="emailConfirmBtn" onclick="confirmSingleEmail()">✉ Enviar</button>
+    </div>
+  </div>
+</div>
+
+<!-- BULK REVIEW -->
+<div class="overlay" id="bulkModal">
+  <div class="modal modal-lg">
+    <div class="modal-title">Revisão de envio em massa</div>
+    <div class="modal-sub" id="bulkSub"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:12px">
+      <div>
+        <div class="modal-label" style="margin-bottom:7px">Destinatários <span id="bulkCnt" style="color:var(--pg);font-family:var(--fm);font-weight:700"></span></div>
+        <div id="recipList" style="border:1.5px solid var(--bd);border-radius:var(--r);max-height:240px;overflow-y:auto;background:var(--bg)"></div>
+        <div style="display:flex;gap:6px;margin-top:8px">
+          <button class="btn btn-xs btn-l2" onclick="addBulkLevel(2)">+ N2</button>
+          <button class="btn btn-xs btn-l3" onclick="addBulkLevel(3)">+ N3</button>
+        </div>
+      </div>
+      <div>
+        <div class="modal-label" style="margin-bottom:6px">Template</div>
+        <select id="bulkRevTpl" style="width:100%;margin-bottom:8px;padding:7px 9px" onchange="refreshBulkPrev()"></select>
+        <div class="modal-label" style="margin-bottom:5px">Pré-visualização</div>
+        <div class="epw">
+          <div class="ehb" style="padding:9px 13px"><div class="elt" style="font-size:14px">tarwi</div></div>
+          <div class="ebp" id="bulkPrev" style="max-height:140px;font-size:11px;padding:11px 13px"></div>
+        </div>
+      </div>
+    </div>
+    <div style="background:var(--bg2);border:1.5px solid var(--bd);border-radius:var(--r);padding:12px 14px;margin-top:12px">
+      <div style="font-size:11px;font-weight:700;margin-bottom:8px;color:var(--pg)">Envio diferenciado por nível</div>
+      <div style="display:flex;align-items:center;gap:9px;padding:6px 0;border-bottom:1px solid var(--bd)">
+        <input type="checkbox" id="dL2" onchange="toggleDiff(2)">
+        <label for="dL2" style="font-size:11px;color:var(--l2);cursor:pointer;min-width:90px;font-weight:600">N2 — template:</label>
+        <select id="dL2Tpl" disabled style="flex:1;opacity:.5;padding:4px 7px;font-size:11px" onchange="refreshBulkPrev()"></select>
+      </div>
+      <div style="display:flex;align-items:center;gap:9px;padding:6px 0">
+        <input type="checkbox" id="dL3" onchange="toggleDiff(3)">
+        <label for="dL3" style="font-size:11px;color:var(--l3);cursor:pointer;min-width:90px;font-weight:600">N3 — template:</label>
+        <select id="dL3Tpl" disabled style="flex:1;opacity:.5;padding:4px 7px;font-size:11px" onchange="refreshBulkPrev()"></select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-g" onclick="closeModal('bulkModal')">Cancelar</button>
+      <button class="btn btn-a" onclick="confirmBulkSend()">✉ Confirmar — <span id="bulkSendCnt">0</span> clientes</button>
+    </div>
+  </div>
+</div>
+
+<!-- HISTORY MODAL -->
+<div class="overlay" id="histModal">
+  <div class="modal" style="width:540px">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:3px">
+      <div><div class="modal-title" id="histTitle">Histórico</div><div class="modal-sub" id="histSubt"></div></div>
+      <button onclick="closeModal('histModal')" style="background:none;border:none;cursor:pointer;color:var(--tx3);font-size:20px;padding:0;margin-top:1px">×</button>
+    </div>
+    <div id="histTimeline" style="position:relative;padding-left:22px;margin-bottom:3px"></div>
+    <div style="margin-top:12px;padding-top:12px;border-top:1.5px solid var(--bd)">
+      <div class="modal-label" style="margin-bottom:6px">Adicionar evento manual</div>
+      <div style="display:flex;gap:7px">
+        <input type="text" id="histNewNote" placeholder="Ex: Cliente ligou, foi enviado tracking...">
+        <button class="btn btn-a btn-sm" onclick="addManualEvent()">Adicionar</button>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-l3 btn-sm" onclick="clearHistory()" style="margin-right:auto">Limpar histórico</button>
+      <button class="btn btn-g" onclick="closeModal('histModal')">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- PREVIEW MODAL -->
+<div class="overlay" id="prevModal">
+  <div class="modal">
+    <div class="modal-title">Pré-visualização</div>
+    <div class="modal-sub">Como o cliente recebe o e-mail</div>
+    <div class="epw">
+      <div class="ehb"><div><div class="elt">tarwi</div><div class="etag">The essential of plants, every day.</div></div></div>
+      <div class="ebp" id="prevContent" style="max-height:340px;font-size:12px;padding:18px 20px"></div>
+      <div class="efb">tarwi · The essential of plants, every day. · tarwi.com</div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-g" onclick="closeModal('prevModal')">Fechar</button></div>
+  </div>
+</div>
+
+<!-- GMAIL SETTINGS MODAL -->
+<div class="overlay" id="gmailSettingsModal">
+  <div class="modal" style="width:540px">
+    <div class="modal-title">⚙ Configuração Gmail</div>
+    <div class="modal-sub">Integração via Google Apps Script</div>
+
+    <div style="background:var(--bg2);border:1.5px solid var(--bd);border-radius:var(--r);padding:14px 16px;margin-bottom:16px;font-size:11px;color:var(--tx2);line-height:1.7">
+      <div style="font-weight:700;color:var(--pg);margin-bottom:8px">Como configurar (5 minutos):</div>
+      <ol style="padding-left:16px;display:flex;flex-direction:column;gap:4px">
+        <li>Aceda a <a href="https://script.google.com" target="_blank" style="color:var(--pg);font-weight:600">script.google.com</a> e clique em <strong>Novo projecto</strong></li>
+        <li>Cole o código do ficheiro <strong>tarwi-gmail-script.gs</strong> (entregue em separado)</li>
+        <li>Clique em <strong>Implementar → Nova implementação</strong></li>
+        <li>Tipo: <strong>Aplicação Web</strong> · Executar como: <strong>Eu</strong> · Acesso: <strong>Qualquer pessoa</strong></li>
+        <li>Clique <strong>Implementar</strong>, autorize as permissões e copie o URL gerado</li>
+        <li>Cole o URL abaixo e clique em <strong>Testar ligação</strong></li>
+      </ol>
+    </div>
+
+    <div style="margin-bottom:12px">
+      <div class="modal-label">URL do Google Apps Script</div>
+      <input type="text" id="gasUrl" placeholder="https://script.google.com/macros/s/XXXXX/exec" style="margin-top:5px;font-family:var(--fm);font-size:11px">
+    </div>
+
+    <div id="gasTestResult" style="display:none;padding:10px 13px;border-radius:var(--r);font-size:11px;margin-bottom:12px"></div>
+
+    <div class="modal-footer">
+      <button class="btn btn-g" onclick="closeModal('gmailSettingsModal')">Fechar</button>
+      <button class="btn btn-g btn-sm" onclick="testGmailConnection()" id="gasTestBtn">🔌 Testar ligação</button>
+      <button class="btn btn-a" onclick="saveGmailSettings()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ALERT MODAL -->
+<div class="overlay" id="alertModal">
+  <div class="modal" style="width:480px">
+    <div class="modal-title">🔔 Criar Alerta</div>
+    <div class="modal-sub" id="alertModalSub">Definir lembrete para esta encomenda</div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+      <div>
+        <div class="modal-label">Data</div>
+        <input type="date" id="alertDate" style="width:100%;padding:7px 10px">
+      </div>
+      <div>
+        <div class="modal-label">Hora (opcional)</div>
+        <input type="time" id="alertTime" style="width:100%;padding:7px 10px">
+      </div>
+    </div>
+
+    <div style="margin-bottom:12px">
+      <div class="modal-label">Tipo de alerta</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px" id="alertTypeButtons">
+        <button class="alert-type-btn active" data-type="ligar" onclick="selectAlertType(this)">📞 Ligar</button>
+        <button class="alert-type-btn" data-type="email" onclick="selectAlertType(this)">✉ Enviar email</button>
+        <button class="alert-type-btn" data-type="verificar" onclick="selectAlertType(this)">🔍 Verificar estado</button>
+        <button class="alert-type-btn" data-type="outro" onclick="selectAlertType(this)">📝 Outro</button>
+      </div>
+    </div>
+
+    <div style="margin-bottom:4px">
+      <div class="modal-label">Nota (opcional)</div>
+      <textarea id="alertNote" placeholder="Ex: Confirmar envio, cliente sensível..." style="min-height:70px;margin-top:5px"></textarea>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-g" onclick="closeModal('alertModal')">Cancelar</button>
+      <button class="btn btn-a" onclick="saveAlert()">Criar alerta</button>
+    </div>
+  </div>
+</div>
+
+<!-- ALERTS LIST MODAL -->
+<div class="overlay" id="alertsListModal">
+  <div class="modal" style="width:560px">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:3px">
+      <div><div class="modal-title">🔔 Alertas desta encomenda</div><div class="modal-sub" id="alertsListSub"></div></div>
+      <button onclick="closeModal('alertsListModal')" style="background:none;border:none;cursor:pointer;color:var(--tx3);font-size:20px;padding:0">×</button>
+    </div>
+    <div id="alertsListContent"></div>
+    <div class="modal-footer">
+      <button class="btn btn-g" onclick="closeModal('alertsListModal')">Fechar</button>
+      <button class="btn btn-a btn-sm" onclick="closeModal('alertsListModal');openAlertModal(currentAlertKey)">+ Novo alerta</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- ── SCRIPT ── -->
+<script>
+// ═══ STATE ═══
+let allOrders=[], mgmt={}, currentTab='all', selIds=new Set();
+let editingTplId=null, singleEmailOrderId=null, bulkReviewIds=[];
+let currentHistOrderId=null;
+
+const PRODUCTS=['Snack Sea Salt','Snack Chilli','Snack Basil','Proteína Sem Sabor 30gr','Proteína Baunilha 30gr','Proteína Cacau 30gr'];
+
+// ═══ DEFAULT TEMPLATE ═══
+const DEFAULT_BODY=`Boa tarde {{nome}},
+
+Enviamos este e-mail para lhe dar uma atualização sobre o estado da sua encomenda {{id_encomenda}}. Devido ao enorme crescimento que a nossa marca teve durante o último mês — algo que nos deixa muito entusiasmados, mas que trouxe também novos desafios — e à nossa recente mudança de imagem, sofremos alguns constrangimentos logísticos que acabaram por atrasar o processamento do seu pedido. Pedimos as nossas mais sinceras desculpas por esta demora e agradecemos imenso a sua paciência.
+
+Para compensar este transtorno, incluiremos um "miminho" especial na sua encomenda, como forma de agradecer a sua compreensão e confiança.
+
+A sua encomenda será expedida ainda durante esta semana e assim que sair do armazém, o nosso parceiro logístico, a Batch, enviar-lhe-á um e-mail diretamente com o código de rastreio para que possa acompanhar a entrega em tempo real.
+
+Estamos a trabalhar para que estes constrangimentos não voltem a acontecer.
+
+Agradecemos por fazer parte do nosso crescimento!
+
+Melhores cumprimentos,
+Equipa tarwi`;
+
+let templates=[
+  {id:'t1',name:'Template Principal',subject:'Atualização sobre a sua encomenda',statusMatch:'',body:DEFAULT_BODY,active:true,updatedAt:new Date()},
+  {id:'t2',name:'Nível 3 — Urgente',subject:'Pedido de desculpas — encomenda atrasada',statusMatch:'nivel3',body:`Boa tarde {{nome}},\n\nA sua encomenda {{id_encomenda}} apresenta um atraso de {{dias_atraso}} dias úteis.\n\nPedimos desculpa pelo transtorno — a sua encomenda foi escalada como prioridade máxima e será expedida nas próximas 24h.\n\nIncluiremos um presente especial como agradecimento pela paciência.\n\nMelhores cumprimentos,\nEquipa tarwi`,active:false,updatedAt:new Date()},
+  {id:'t3',name:'Delayed — Shopify',subject:'Estado da sua encomenda tarwi',statusMatch:'Delayed',body:`Boa tarde {{nome}},\n\nEstamos a acompanhar de perto a sua encomenda {{id_encomenda}}.\n\nRegistámos um atraso logístico que esperamos resolver brevemente. Assim que a encomenda sair do armazém receberá o código de rastreio.\n\nObrigado pela compreensão!\n\nEquipa tarwi`,active:false,updatedAt:new Date()}
+];
+
+// ═══ UTILS ═══
+function bizDays(s,e){let c=0;const d=new Date(s);d.setHours(0,0,0,0);const f=new Date(e);f.setHours(0,0,0,0);while(d<f){const w=d.getDay();if(w&&w<6)c++;d.setDate(d.getDate()+1);}return c;}
+function getLevel(d){return d<2?1:d<=7?2:3}
+function fmtDate(d){if(!d)return'—';return d.toLocaleDateString('pt-PT',{day:'2-digit',month:'2-digit',year:'numeric'})}
+function fmtTs(ts){try{const d=new Date(ts);return d.toLocaleDateString('pt-PT',{day:'2-digit',month:'2-digit',year:'numeric'})+' '+d.toLocaleTimeString('pt-PT',{hour:'2-digit',minute:'2-digit'});}catch(e){return ts||'—';}}
+function parseDate(v){if(!v)return null;if(v instanceof Date&&!isNaN(v))return v;const s=String(v).trim();if(!s||s==='-'||s==='—')return null;let m;if((m=s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/)))return new Date(+m[3],+m[2]-1,+m[1]);if((m=s.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/)))return new Date(+m[1],+m[2]-1,+m[3]);const d=new Date(s);return isNaN(d)?null:d;}
+function normKey(k){return k.toLowerCase().replace(/[\s_\-]/g,'').replace(/[àáâãä]/g,'a').replace(/[éêë]/g,'e').replace(/[íî]/g,'i').replace(/[óôõö]/g,'o').replace(/[úû]/g,'u').replace(/ç/g,'c')}
+function findCol(row,cands){const keys=Object.keys(row);for(const c of cands){const f=keys.find(k=>normKey(k)===normKey(c));if(f!==undefined)return row[f];}return'';}
+function toast(msg,type='ok'){const t=document.getElementById('toast');t.textContent=msg;t.className='toast '+type+' show';clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),3000);}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+document.querySelectorAll('.overlay').forEach(m=>m.addEventListener('click',function(e){if(e.target===this)this.classList.remove('open');}));
+
+function applyTpl(body,o){
+  return body
+    .replace(/{{nome}}/g,o.name||'')
+    .replace(/{{id_encomenda}}/g,o.orderNumber||o.shopifyId||'')
+    .replace(/{{dias_atraso}}/g,o.days||0)
+    .replace(/{{data_encomenda}}/g,fmtDate(o.createdDate))
+    .replace(/{{delivery_date}}/g,fmtDate(o.deliveryDate));
+}
+
+function getTplForOrder(o){
+  // priority: status match > level match > active/default
+  const status=o.status||'';
+  const lvlKey=o.level===3?'nivel3':o.level===2?'nivel2':'';
+  return templates.find(t=>t.statusMatch&&t.statusMatch===status)
+      || templates.find(t=>t.statusMatch&&t.statusMatch===lvlKey)
+      || templates.find(t=>t.active)
+      || templates[0];
+}
+function getActiveTpl(){return templates.find(t=>t.active)||templates[0]}
+
+// ═══ PERSISTENCE ═══
+function save(){
+  try{
+    localStorage.setItem('tw_mgmt',JSON.stringify(mgmt));
+    localStorage.setItem('tw_tpls',JSON.stringify(templates));
+    // Persist orders (dates as ISO strings)
+    const ordersToSave=allOrders.map(o=>({
+      ...o,
+      createdDate:o.createdDate?o.createdDate.toISOString():null,
+      deliveryDate:o.deliveryDate?o.deliveryDate.toISOString():null,
+    }));
+    localStorage.setItem('tw_orders',JSON.stringify(ordersToSave));
+  }catch(e){}
+}
+function load(){
+  try{
+    const m=localStorage.getItem('tw_mgmt');if(m)mgmt=JSON.parse(m);
+    const t=localStorage.getItem('tw_tpls');if(t){const p=JSON.parse(t);if(p.length)templates=p.map(x=>({...x,updatedAt:new Date(x.updatedAt)}));}
+    const o=localStorage.getItem('tw_orders');
+    if(o){
+      const parsed=JSON.parse(o);
+      allOrders=parsed.map(x=>({
+        ...x,
+        createdDate:x.createdDate?new Date(x.createdDate):null,
+        deliveryDate:x.deliveryDate?new Date(x.deliveryDate):null,
+      }));
+    }
+  }catch(e){}
+}
+function clearAll(){
+  if(!confirm('Apagar todos os dados locais (encomendas, histórico, notas, alertas)?'))return;
+  localStorage.removeItem('tw_mgmt');
+  localStorage.removeItem('tw_tpls');
+  localStorage.removeItem('tw_orders');
+  mgmt={};allOrders=[];
+  toast('Dados apagados','warn');
+  updateDashboard();renderOrders();updateStats();
+  document.getElementById('noData').style.display='block';
+}
+
+// ═══ NAV ═══
+function nav(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));
+  document.getElementById('pg-'+id).classList.add('active');
+  const idx=['dash','orders','alerts','templates','history','stats'].indexOf(id);
+  document.querySelectorAll('.ni')[idx].classList.add('active');
+  if(id==='stats')updateStats();
+  if(id==='templates'){renderTplTable();populateTplSelects();}
+  if(id==='history')renderHistoryPage();
+  if(id==='alerts')renderAlerts();
+}
+
+// ═══ FILE ═══
+function handleFile(e){const f=e.target.files[0];if(f)processFile(f);}
+const uz=document.getElementById('uploadZone');
+uz.addEventListener('dragover',e=>{e.preventDefault();uz.classList.add('drag');});
+uz.addEventListener('dragleave',()=>uz.classList.remove('drag'));
+uz.addEventListener('drop',e=>{e.preventDefault();uz.classList.remove('drag');const f=e.dataTransfer.files[0];if(f)processFile(f);});
+
+function processFile(file){
+  const ext=file.name.split('.').pop().toLowerCase();
+  const reader=new FileReader();
+  reader.onload=function(e){
+    let rows=[];
+    if(ext==='csv'){rows=Papa.parse(e.target.result,{header:true,skipEmptyLines:true}).data;}
+    else{const wb=XLSX.read(e.target.result,{type:'binary',cellDates:true});rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:''});}
+    parseOrders(rows);
+    document.getElementById('uploadOk').style.display='inline-flex';
+    document.getElementById('uploadName').textContent=file.name;
+    document.getElementById('lastUpd').textContent='Atualizado: '+new Date().toLocaleTimeString('pt-PT',{hour:'2-digit',minute:'2-digit'});
+  };
+  if(ext==='csv')reader.readAsText(file,'UTF-8');else reader.readAsBinaryString(file);
+}
+
+function parseOrders(rows){
+  const now=new Date();
+  const RESOLVED_STATUSES=['delivered','entregue','cancelled','cancelado','cancelada','closed','fechado','completed','concluido','concluída','devolvida','returned'];
+
+  const incomingOrders=rows.map((r,i)=>{
+    const shopifyId=String(findCol(r,['id ecommerce','id_ecommerce','idecommerce','shopify id','shopifyid','id shopify','ecommerce id'])||'').trim();
+    const orderNumber=String(findCol(r,['order number','ordernumber','order_number','numero encomenda','nº encomenda','order nr'])||'').trim();
+    const name=String(findCol(r,['customer name','customername','nome','cliente','client'])||'—').trim();
+    const email=String(findCol(r,['customer email','customeremail','email','e-mail','mail'])||'').trim();
+    const createdRaw=findCol(r,['creation date','creationdate','data criacao','datacriacao','data','created','order date','orderdate']);
+    const deliveryRaw=findCol(r,['delivery date','deliverydate','data entrega','data de entrega','estimated delivery','ship date']);
+    const status=String(findCol(r,['status','estado','state'])||'Pending').trim();
+    const createdDate=parseDate(createdRaw);
+    const deliveryDate=parseDate(deliveryRaw);
+    const isResolved=RESOLVED_STATUSES.includes(status.toLowerCase());
+    const refDate=deliveryDate||createdDate;
+    const days=isResolved?0:(refDate?bizDays(refDate,now):0);
+    const level=isResolved?0:getLevel(Math.max(0,days));
+    const syncError=!!(shopifyId&&!orderNumber);
+    return{shopifyId,orderNumber,name,email,createdDate,deliveryDate,status,days:Math.max(0,days),level,syncError,isResolved};
+  });
+
+  // ── MERGE: update existing orders, keep manual data, add new ones ──
+  const merged=[];
+  let updated=0, added=0;
+
+  incomingOrders.forEach(incoming=>{
+    const key=incoming.orderNumber||incoming.shopifyId;
+    const existing=allOrders.find(x=>(x.orderNumber||x.shopifyId)===key);
+
+    if(existing){
+      // Encomenda já existe — atualiza apenas campos do ficheiro
+      const prevStatus=existing.status;
+      const prevLevel=existing.level;
+      const updated_order={
+        ...existing,                    // preserva tudo
+        // campos atualizados pelo ficheiro:
+        status:incoming.status,
+        deliveryDate:incoming.deliveryDate,
+        createdDate:incoming.createdDate,
+        name:incoming.name,
+        email:incoming.email,
+        days:incoming.days,
+        level:incoming.level,
+        isResolved:incoming.isResolved,
+        syncError:incoming.syncError,
+      };
+      merged.push(updated_order);
+
+      // Regista mudanças no histórico
+      if(incoming.status!==prevStatus){
+        addHistEv(key,'status',`Estado atualizado: "${prevStatus}" → "${incoming.status}"`,'via upload');
+      }
+      if(!incoming.isResolved && incoming.level!==prevLevel && prevLevel>0){
+        addHistEv(key,'status',`Nível alterado: N${prevLevel}→N${incoming.level}`,`${incoming.days} dias úteis`);
+      }
+      updated++;
+    } else {
+      // Nova encomenda
+      merged.push(incoming);
+      if(incoming.syncError){
+        addHistEv(key,'upload','Erro de sincronização',`ID Shopify: ${incoming.shopifyId} sem Order Number`);
+      } else {
+        addHistEv(key,'upload','Encomenda carregada',`${incoming.name} · ${incoming.isResolved?incoming.status:'Nível '+incoming.level+' · '+incoming.days+'d atraso'}`);
+      }
+      added++;
+    }
+
+    // Auto-resolver entregues/canceladas
+    if(incoming.isResolved){
+      const m=mgmt[key]||{};
+      if(m.status!=='resolvido'){
+        m.status='resolvido';
+        mgmt[key]=m;
+        addHistEv(key,'status',`Auto-resolvido: "${incoming.status}"`,`Contagem de dias pausada`);
+      }
+    }
+  });
+
+  allOrders=merged;
+  selIds.clear();
+  updateDashboard();renderOrders();updateStats();populateTplSelects();
+  document.getElementById('noData').style.display='none';
+  document.getElementById('totalCnt').textContent=allOrders.length+' encomendas';
+  updateAlertPip();
+  save();
+
+  const msg=added>0&&updated>0
+    ?`✓ ${updated} atualizadas · ${added} novas`
+    :added>0?`✓ ${added} encomendas carregadas`
+    :`✓ ${updated} encomendas atualizadas (dados manuais preservados)`;
+  toast(msg);
+}
+
+// ═══ DASHBOARD ═══
+function updateDashboard(){
+  const l1=allOrders.filter(o=>o.level===1).length;
+  const l2=allOrders.filter(o=>o.level===2).length;
+  const l3=allOrders.filter(o=>o.level===3).length;
+  const tot=allOrders.length;
+  const atrasados=l2+l3;
+  const errs=allOrders.filter(o=>o.syncError).length;
+  document.getElementById('s-tot').textContent=atrasados;
+  document.getElementById('s-l1').textContent=l1;
+  document.getElementById('s-l2').textContent=l2;
+  document.getElementById('s-l3').textContent=l3;
+  document.getElementById('s-err').textContent=errs;
+  const pct=n=>atrasados?Math.round(n/atrasados*100)+'%':'0%';
+  document.getElementById('p-l1').textContent='';
+  document.getElementById('p-l2').textContent=pct(l2);
+  document.getElementById('p-l3').textContent=pct(l3);
+  const sla=tot?Math.round(l1/tot*100):100;
+  document.getElementById('slaVal').textContent=sla+'%';
+  const sb=document.getElementById('slaBar');sb.style.width=sla+'%';
+  sb.style.background=sla>=80?'#4ade80':sla>=50?'var(--zest)':'var(--pink)';
+}
+
+// ═══ ALERTS ═══
+function updateAlertPip(){
+  const syncErrs=allOrders.filter(o=>o.syncError).length;
+  const critDelay=allOrders.filter(o=>o.level===3).length;
+  const toContact=allOrders.filter(o=>o.level>=2&&!(mgmt[o.orderNumber||o.shopifyId]||{}).emailSent).length;
+  const total=syncErrs+critDelay+toContact;
+  const pip=document.getElementById('alertPip');
+  pip.style.display=total>0?'inline':'none';
+  pip.textContent=total;
+}
+
+function renderAlerts(){
+  const syncErrs=allOrders.filter(o=>o.syncError);
+  const critDelay=allOrders.filter(o=>o.level===3&&!o.syncError);
+  const toContact=allOrders.filter(o=>o.level>=2&&!o.syncError&&!(mgmt[o.orderNumber||o.shopifyId]||{}).emailSent);
+  const container=document.getElementById('alertsContent');
+  if(!allOrders.length){container.innerHTML='<div class="empty"><div class="empty-icon">🔔</div><div class="empty-title">Sem dados</div>Carregue um ficheiro para ver alertas</div>';return;}
+
+  let html='';
+
+  // PENDING ALERTS
+  const now=new Date();
+  const pendingAlerts=[];
+  Object.entries(mgmt).forEach(([key,m])=>{
+    const o=allOrders.find(x=>(x.orderNumber||x.shopifyId)===key);
+    (m.alerts||[]).filter(al=>!al.done).forEach(al=>{
+      pendingAlerts.push({...al,key,name:o?o.name:'—',orderId:key});
+    });
+  });
+  pendingAlerts.sort((a,b)=>new Date(a.date+'T'+(a.time||'00:00'))-new Date(b.date+'T'+(b.time||'00:00')));
+  const overdueAlerts=pendingAlerts.filter(al=>alertStatus(al.date,al.time)==='overdue');
+  const dueAlerts=pendingAlerts.filter(al=>alertStatus(al.date,al.time)==='due');
+  const upcomingAlerts=pendingAlerts.filter(al=>alertStatus(al.date,al.time)==='upcoming');
+  const typeLabels={ligar:'📞 Ligar',email:'✉ Email',verificar:'🔍 Verificar',outro:'📝 Outro'};
+
+  html+=`<div class="alert-card crit" style="margin-bottom:12px">
+    <div class="alert-hdr"><span class="alert-icon">⏰</span><span class="alert-title">Alertas em Atraso</span><span class="alert-count" style="color:var(--l3)">${overdueAlerts.length}</span></div>
+    <div class="alert-sub">Lembretes que já passaram da data/hora definida</div>`;
+  if(overdueAlerts.length){html+=overdueAlerts.map(al=>`<div class="alert-list-item">
+    <span style="font-size:10px;padding:1px 7px;border-radius:10px;background:var(--l3b);color:var(--l3);font-weight:700">${typeLabels[al.type]||al.type}</span>
+    <span style="font-weight:600">${al.name}</span><span class="tdmono" style="font-size:10px">${al.orderId}</span>
+    <span style="color:var(--tx3);font-size:10px">${fmtAlertDate(al.date,al.time)}</span>
+    ${al.note?`<span style="color:var(--tx3);font-size:10px;font-style:italic">${al.note}</span>`:''}
+    <button class="btn btn-xs btn-a" style="margin-left:auto" onclick="openAlertsList('${al.key}')">Ver</button>
+  </div>`).join('');}
+  else{html+='<div style="font-size:11px;color:var(--tx3);padding:6px 0">✓ Sem alertas em atraso</div>';}
+  html+='</div>';
+
+  html+=`<div class="alert-card warn" style="margin-bottom:12px">
+    <div class="alert-hdr"><span class="alert-icon">🔔</span><span class="alert-title">Alertas para Hoje</span><span class="alert-count" style="color:var(--l2)">${dueAlerts.length}</span></div>
+    <div class="alert-sub">Lembretes agendados para as próximas 24 horas</div>`;
+  if(dueAlerts.length){html+=dueAlerts.map(al=>`<div class="alert-list-item">
+    <span style="font-size:10px;padding:1px 7px;border-radius:10px;background:var(--l2b);color:var(--l2);font-weight:700">${typeLabels[al.type]||al.type}</span>
+    <span style="font-weight:600">${al.name}</span><span class="tdmono" style="font-size:10px">${al.orderId}</span>
+    <span style="color:var(--tx3);font-size:10px">${fmtAlertDate(al.date,al.time)}</span>
+    ${al.note?`<span style="color:var(--tx3);font-size:10px;font-style:italic">${al.note}</span>`:''}
+    <button class="btn btn-xs btn-a" style="margin-left:auto" onclick="openAlertsList('${al.key}')">Ver</button>
+  </div>`).join('');}
+  else{html+='<div style="font-size:11px;color:var(--tx3);padding:6px 0">✓ Sem alertas para hoje</div>';}
+  html+='</div>';
+
+  html+=`<div class="alert-card info" style="margin-bottom:12px">
+    <div class="alert-hdr"><span class="alert-icon">📅</span><span class="alert-title">Próximos Alertas</span><span class="alert-count" style="color:var(--pg)">${upcomingAlerts.length}</span></div>
+    <div class="alert-sub">Lembretes agendados para os próximos dias</div>`;
+  if(upcomingAlerts.length){html+=upcomingAlerts.map(al=>`<div class="alert-list-item">
+    <span style="font-size:10px;padding:1px 7px;border-radius:10px;background:var(--l1b);color:var(--l1);font-weight:700">${typeLabels[al.type]||al.type}</span>
+    <span style="font-weight:600">${al.name}</span><span class="tdmono" style="font-size:10px">${al.orderId}</span>
+    <span style="color:var(--tx3);font-size:10px">${fmtAlertDate(al.date,al.time)}</span>
+    ${al.note?`<span style="color:var(--tx3);font-size:10px;font-style:italic">${al.note}</span>`:''}
+    <button class="btn btn-xs btn-g" style="margin-left:auto" onclick="openAlertsList('${al.key}')">Ver</button>
+  </div>`).join('');}
+  else{html+='<div style="font-size:11px;color:var(--tx3);padding:6px 0">✓ Sem próximos alertas</div>';}
+  html+='</div>';
+  html+=`<div class="alert-card crit">
+    <div class="alert-hdr"><span class="alert-icon">⚠️</span><span class="alert-title">Erros de Sincronização</span><span class="alert-count" style="color:var(--l3)">${syncErrs.length}</span></div>
+    <div class="alert-sub">ID Shopify presente mas sem Order Number — verifique integração</div>`;
+  if(syncErrs.length){
+    html+=syncErrs.map(o=>`<div class="alert-list-item">
+      <span class="err-badge">⚠ Sync Error</span>
+      <span style="font-weight:600">${o.shopifyId}</span>
+      <span style="color:var(--tx3)">${o.name} · ${o.email||'—'}</span>
+      <button class="btn btn-xs btn-g" style="margin-left:auto" onclick="openHistory('${o.shopifyId}')">Ver histórico</button>
+    </div>`).join('');
+  }else{html+='<div style="font-size:11px;color:var(--tx3);padding:6px 0">✓ Sem erros de sincronização</div>';}
+  html+='</div>';
+
+  // CRITICAL DELAY
+  html+=`<div class="alert-card warn">
+    <div class="alert-hdr"><span class="alert-icon">🔴</span><span class="alert-title">Atrasos Críticos — Nível 3</span><span class="alert-count" style="color:var(--l3)">${critDelay.length}</span></div>
+    <div class="alert-sub">Encomendas com mais de 7 dias úteis de atraso</div>`;
+  if(critDelay.length){
+    html+=critDelay.map(o=>`<div class="alert-list-item">
+      <span class="lvl-badge lv3-b">N3</span>
+      <span style="font-weight:600">${o.name}</span>
+      <span class="tdmono">${o.orderNumber||o.shopifyId}</span>
+      <span style="color:var(--l3);font-family:var(--fm);font-size:11px;margin-left:4px">${o.days}d</span>
+      <span style="color:var(--tx3);font-size:11px;margin-left:4px">${o.status}</span>
+      <button class="btn btn-xs btn-a" style="margin-left:auto" onclick="openSingleEmail('${o.orderNumber||o.shopifyId}')">✉ Email</button>
+    </div>`).join('');
+  }else{html+='<div style="font-size:11px;color:var(--tx3);padding:6px 0">✓ Sem atrasos críticos</div>';}
+  html+='</div>';
+
+  // TO CONTACT
+  html+=`<div class="alert-card info">
+    <div class="alert-hdr"><span class="alert-icon">📞</span><span class="alert-title">Clientes por Contactar</span><span class="alert-count" style="color:var(--pg)">${toContact.length}</span></div>
+    <div class="alert-sub">Níveis 2 e 3 sem email enviado</div>`;
+  if(toContact.length){
+    html+=toContact.map(o=>`<div class="alert-list-item">
+      <span class="lvl-badge ${o.level===2?'lv2-b':'lv3-b'}">${o.level===2?'N2':'N3'}</span>
+      <span style="font-weight:600">${o.name}</span>
+      <span class="tdmono">${o.orderNumber||o.shopifyId}</span>
+      <span style="color:var(--tx3);font-size:11px;margin-left:4px">${o.days}d · ${o.status}</span>
+      <button class="btn btn-xs btn-z" style="margin-left:auto" onclick="openSingleEmail('${o.orderNumber||o.shopifyId}')">✉ Email</button>
+    </div>`).join('');
+  }else{html+='<div style="font-size:11px;color:var(--tx3);padding:6px 0">✓ Todos os clientes contactados</div>';}
+  html+='</div>';
+
+  container.innerHTML=html;
+}
+
+// ═══ ORDERS TABLE ═══
+function clearFilters(){
+  document.getElementById('searchBox').value='';
+  document.getElementById('fEstadoEnc').value='';
+  document.getElementById('fDiasAtraso').value='';
+  document.getElementById('fEstadoAcao').value='';
+  renderOrders();
+}
+
+function getVisible(){
+  const q=(document.getElementById('searchBox')||{value:''}).value.toLowerCase();
+  const fEnc=(document.getElementById('fEstadoEnc')||{value:''}).value;
+  const fDias=(document.getElementById('fDiasAtraso')||{value:''}).value;
+  const fAcao=(document.getElementById('fEstadoAcao')||{value:''}).value;
+  const estadoTabs=['pendente','tratado','ligar','contactado','resolvido'];
+  let ords;
+  if(currentTab==='err'){
+    ords=allOrders.filter(o=>o.syncError);
+  } else if(estadoTabs.includes(currentTab)){
+    ords=allOrders.filter(o=>!o.syncError&&(mgmt[o.orderNumber||o.shopifyId]||{}).status===currentTab);
+  } else {
+    ords=allOrders.filter(o=>o.level>=2&&!o.syncError);
+    if(currentTab==='l2')ords=ords.filter(o=>o.level===2);
+    if(currentTab==='l3')ords=ords.filter(o=>o.level===3);
+  }
+  // Apply dropdown filters
+  if(fEnc) ords=ords.filter(o=>(o.status||'').toLowerCase()===fEnc.toLowerCase());
+  if(fDias==='l1') ords=ords.filter(o=>o.level===1);
+  else if(fDias==='l2') ords=ords.filter(o=>o.level===2);
+  else if(fDias==='l3') ords=ords.filter(o=>o.level===3);
+  else if(fDias==='0') ords=ords.filter(o=>o.isResolved||o.days===0);
+  if(fAcao) ords=ords.filter(o=>(mgmt[o.orderNumber||o.shopifyId]||{}).status===fAcao);
+  if(q) ords=ords.filter(o=>
+    (o.name||'').toLowerCase().includes(q)||
+    (o.email||'').toLowerCase().includes(q)||
+    (o.orderNumber||'').toLowerCase().includes(q)||
+    (o.shopifyId||'').toLowerCase().includes(q)
+  );
+  return ords;
+}
+
+function renderOrders(){
+  const ords=getVisible();
+  const act=allOrders.filter(o=>o.level>=2&&!o.syncError);
+  document.getElementById('tb-all').textContent=act.length;
+  document.getElementById('tb-l2').textContent=act.filter(o=>o.level===2).length;
+  document.getElementById('tb-l3').textContent=act.filter(o=>o.level===3).length;
+  document.getElementById('tb-err').textContent=allOrders.filter(o=>o.syncError).length;
+  ['pendente','tratado','ligar','contactado','resolvido'].forEach(s=>{
+    const el=document.getElementById('tb-'+s);
+    if(el)el.textContent=allOrders.filter(o=>!o.syncError&&(mgmt[o.orderNumber||o.shopifyId]||{}).status===s).length;
+  });
+  const tb=document.getElementById('ordersBody');
+  // Show active filter indicator
+  const fEnc=(document.getElementById('fEstadoEnc')||{value:''}).value;
+  const fDias=(document.getElementById('fDiasAtraso')||{value:''}).value;
+  const fAcao=(document.getElementById('fEstadoAcao')||{value:''}).value;
+  const q=(document.getElementById('searchBox')||{value:''}).value;
+  const activeFilters=[fEnc,fDias,fAcao,q].filter(Boolean).length;
+  const countEl=document.getElementById('filterResultCount');
+  if(countEl){countEl.textContent=`${ords.length} resultado(s)${activeFilters?' — '+activeFilters+' filtro(s) ativo(s)':''}`;}
+  if(!ords.length){tb.innerHTML=`<tr><td colspan="18"><div class="empty"><div class="empty-icon">🌱</div><div class="empty-title">Sem encomendas neste filtro</div>Tente ajustar os filtros ou <button class="btn btn-g btn-xs" onclick="clearFilters()">limpar todos</button></div></td></tr>`;return;}
+
+  tb.innerHTML=ords.map(o=>{
+    const key=o.orderNumber||o.shopifyId;
+    const m=mgmt[key]||{};
+    const isResolved=o.isResolved;
+    const lc=o.level===2?'lv2-b':o.level===3?'lv3-b':'lv1-b';
+    const ll=isResolved?'✓':o.level===2?'N2':o.level===3?'N3':'N1';
+    const dc=o.level===3?'var(--l3)':o.level===2?'var(--l2)':'var(--tx3)';
+    const chk=selIds.has(key)?'checked':'';
+    const sentCount=m.emailSentCount||0;
+    const lastComm=m.lastCommDate?fmtTs(m.lastCommDate):'—';
+    const prodAdded=m.productAdded||false;
+    const selectedProds=m.products||[];
+    const dynamics=m.dynamics||false;
+    const sensitive=m.sensitive||false;
+    const note=m.note||'';
+    const status=m.status||'pendente';
+    const isErr=o.syncError;
+
+    // Level cell
+    const levelCell=isErr
+      ?'<span class="err-badge">⚠ Sync</span>'
+      :isResolved
+        ?'<span class="lvl-badge lv1-b">✓ OK</span>'
+        :`<span class="lvl-badge ${lc}">${ll}</span>`;
+
+    // Days cell
+    const daysCell=isResolved
+      ?`<span style="font-size:10px;color:var(--tx3)">—</span>`
+      :`<span style="font-family:var(--fm);font-size:11px;color:${dc};font-weight:700">${o.days}d</span>`;
+
+    // Resolved row styling
+    const rowStyle=isResolved?'opacity:.65;background:rgba(46,139,87,.03)':isErr?'':'';
+
+    const prodDisplay=selectedProds.length
+      ?selectedProds.map(p=>`<span class="prod-pill">${p}</span>`).join('')
+      :'<span style="color:var(--tx3);font-size:10px">—</span>';
+
+    // Pending alerts count for this row
+    const alertCnt=((m.alerts||[]).filter(a=>!a.done).length);
+    const alertBtn=`<button class="btn btn-g btn-xs" onclick="${alertCnt?`openAlertsList('${key}')`:`openAlertModal('${key}')`}" title="Alertas" style="color:var(--l2)">${alertCnt?`🔔${alertCnt}`:'🔔'}</button>`;
+
+    return`<tr style="${rowStyle}" class="${isErr?'err-row':''}">
+<td><input type="checkbox" class="rc" data-id="${key}" ${chk} onchange="rowChk('${key}',this.checked)"></td>
+<td><span class="tdmono">${o.shopifyId||'—'}</span></td>
+<td><span class="tdmono">${o.orderNumber||(isErr?'<span style="color:var(--pink);font-weight:700">Erro sync</span>':'—')}</span></td>
+<td style="font-weight:600;white-space:nowrap">${o.name}${sensitive?'<span style="color:var(--pink);margin-left:4px;font-size:10px" title="Cliente sensível">●</span>':''}</td>
+<td>${levelCell}</td>
+<td class="td-m">${fmtDate(o.createdDate)}</td>
+<td class="td-m">${fmtDate(o.deliveryDate)}</td>
+<td>${daysCell}</td>
+<td><span style="font-size:11px;font-weight:600;color:${statusColor(o.status)}">${o.status||'—'}</span>${isResolved?'<span style="display:block;font-size:9px;color:var(--l1)">Resolvido auto</span>':''}</td>
+<td style="text-align:center;font-family:var(--fm);font-size:11px;font-weight:700;color:${sentCount>0?'var(--pg)':'var(--tx3)'}">${sentCount>0?sentCount:'—'}</td>
+<td class="td-m" style="white-space:nowrap;font-size:10px">${lastComm}</td>
+<td style="text-align:center">
+  <select class="st-sel" style="font-size:10px;padding:2px 5px" onchange="updProdAdded('${key}',this.value)">
+    <option value="nao" ${!prodAdded?'selected':''}>Não</option>
+    <option value="sim" ${prodAdded?'selected':''}>Sim</option>
+  </select>
+</td>
+<td style="min-width:130px">
+  <div style="position:relative">
+    <button class="btn btn-g btn-xs" onclick="toggleProdMenu('${key}',this)">Escolher ▾</button>
+    <div class="prod-menu" id="pm-${key}">
+      ${PRODUCTS.map(p=>`<label><input type="checkbox" ${(selectedProds.includes(p))?'checked':''} onchange="toggleProduct('${key}','${p}',this.checked)"> ${p}</label>`).join('')}
+    </div>
+  </div>
+  <div style="margin-top:3px">${prodDisplay}</div>
+</td>
+<td style="text-align:center"><input type="checkbox" ${dynamics?'checked':''} onchange="updDynamics('${key}',this.checked)" title="Dynamics feito"></td>
+<td style="text-align:center"><input type="checkbox" ${sensitive?'checked':''} onchange="updSensitive('${key}',this.checked)" title="Cliente Sensível" style="accent-color:var(--pink)"></td>
+<td>
+  <select class="st-sel" onchange="updStatus('${key}',this.value)" style="width:100%">
+    <option value="pendente" ${status==='pendente'?'selected':''}>⏳ Pendente</option>
+    <option value="tratado" ${status==='tratado'?'selected':''}>✅ Tratado</option>
+    <option value="ligar" ${status==='ligar'?'selected':''}>📞 Ligar</option>
+    <option value="contactado" ${status==='contactado'?'selected':''}>✉ Contactado</option>
+    <option value="resolvido" ${status==='resolvido'?'selected':''}>🟢 Resolvido</option>
+  </select>
+</td>
+<td style="min-width:160px">
+  <textarea class="note-ta" rows="2" placeholder="Adicionar nota livre..." onblur="updNote('${key}',this.value)" style="min-height:44px;border:1px solid var(--bd);border-radius:5px;padding:4px 6px;background:var(--bg2);width:100%">${note}</textarea>
+</td>
+<td>
+  <div style="display:flex;flex-direction:column;gap:3px">
+    <div style="display:flex;gap:3px">
+      <button class="btn btn-g btn-xs" onclick="openSingleEmail('${key}')" title="Enviar email">✉</button>
+      <button class="btn btn-g btn-xs" onclick="openHistory('${key}')" title="Histórico" style="color:var(--tx3)">🕐</button>
+      ${alertBtn}
+    </div>
+    <div style="display:flex;gap:3px">
+      <button class="btn btn-xs qa-btn" style="background:rgba(193,127,0,.1);color:var(--l2);border-color:var(--l2d);font-size:10px;flex:1" data-key="${key}" data-type="ligar" title="Planear ação">📞 Planear ação</button>
+    </div>
+  </div>
+</td>
+</tr>`;
+  }).join('');
+  syncSelBar();
+}
+
+function statusColor(s){
+  const map={
+    'A caminho':'var(--l1)',
+    'Em picking':'var(--pg)',
+    'Em packing':'var(--pg)',
+    'No centro operacional':'var(--tx2)',
+    'Em espera':'var(--l2)',
+    'No ponto para levantamento':'var(--l1)',
+    'Entregue':'var(--l1)',
+    'Devolvida':'var(--pink)',
+    'Cancelada':'var(--tx3)',
+    'Preparada incidência':'var(--l3)',
+    'Stock out':'var(--l3)',
+    // legacy English statuses
+    'Pending':'var(--l2)','Delayed':'var(--l3)','Processing':'var(--pg)','Shipped':'var(--l1)','Cancelled':'var(--tx3)','Delivered':'var(--l1)'
+  };
+  return map[s]||'var(--tx2)';
+}
+
+function switchTab(tab,el){currentTab=tab;document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');renderOrders();}
+
+// ═══ PRODUCT MENU ═══
+function toggleProdMenu(key,btn){
+  const menu=document.getElementById('pm-'+key);
+  const isOpen=menu.classList.contains('open');
+  document.querySelectorAll('.prod-menu.open').forEach(m=>m.classList.remove('open'));
+  if(!isOpen)menu.classList.add('open');
+}
+document.addEventListener('click',function(e){
+  if(!e.target.closest('.prod-dropdown')&&!e.target.matches('.btn-g')&&!e.target.closest('.prod-menu')){
+    document.querySelectorAll('.prod-menu.open').forEach(m=>m.classList.remove('open'));
+  }
+  // Quick action button (delegated to avoid template-literal issues)
+  const qa=e.target.closest('.qa-btn');
+  if(qa){
+    const key=qa.dataset.key;
+    const type=qa.dataset.type||'ligar';
+    openAlertModal(key,type);
+  }
+});
+function toggleProduct(key,prod,checked){
+  const m=mgmt[key]||{};
+  if(!m.products)m.products=[];
+  if(checked){if(!m.products.includes(prod))m.products.push(prod);}
+  else{m.products=m.products.filter(p=>p!==prod);}
+  mgmt[key]=m;
+  addHistEv(key,'product',checked?`Produto adicionado: ${prod}`:`Produto removido: ${prod}`,'');
+  save();renderOrders();
+}
+
+// ═══ MGMT ═══
+function addHistEv(key,type,action,detail=''){
+  const m=mgmt[key]||{};if(!m.history)m.history=[];
+  m.history.push({type,action,detail,ts:new Date().toISOString()});
+  mgmt[key]=m;save();
+}
+function updProdAdded(key,v){const m=mgmt[key]||{};m.productAdded=v==='sim';mgmt[key]=m;addHistEv(key,'product',`Produto adicionado: ${v}`,'');save();renderOrders();}
+function updDynamics(key,checked){const m=mgmt[key]||{};m.dynamics=checked;mgmt[key]=m;addHistEv(key,'status',`Dynamics: ${checked?'feito':'pendente'}`,'');save();}
+function updSensitive(key,checked){const m=mgmt[key]||{};m.sensitive=checked;mgmt[key]=m;addHistEv(key,'note',`Cliente sensível: ${checked?'sim':'não'}`,'');save();}
+function updStatus(key,v){
+  const m=mgmt[key]||{};const prev=m.status||'pendente';
+  if(prev===v)return;m.status=v;mgmt[key]=m;
+  const lbl={pendente:'⏳ Pendente',tratado:'✅ Tratado',ligar:'📞 Ligar',contactado:'✉ Contactado',resolvido:'🟢 Resolvido'};
+  addHistEv(key,'status',`Estado: ${lbl[prev]||prev} → ${lbl[v]||v}`,'');
+  renderOrders();updateStats();
+}
+
+// Quick action — opens alert modal pre-filled with action type
+function quickAction(key, type='ligar'){
+  openAlertModal(key, type);
+}
+function updNote(key,v){const m=mgmt[key]||{};if(m.note===v)return;m.note=v;mgmt[key]=m;if(v.trim())addHistEv(key,'note','Nota adicionada',v.substring(0,80));save();}
+
+// ═══ SELECTION ═══
+function rowChk(id,checked){checked?selIds.add(id):selIds.delete(id);syncSelBar();}
+function chkAllRows(master){document.querySelectorAll('.rc').forEach(c=>{c.checked=master.checked;master.checked?selIds.add(c.dataset.id):selIds.delete(c.dataset.id);});syncSelBar();}
+function syncSelBar(){
+  const bar=document.getElementById('selBar');const n=selIds.size;
+  bar.classList.toggle('show',n>0);
+  document.getElementById('selCnt').textContent=n;
+  document.getElementById('bulkSendCnt').textContent=n;
+  const all=document.querySelectorAll('.rc');const ca=document.getElementById('chkAll');
+  if(ca){ca.checked=n>0&&n===all.length;ca.indeterminate=n>0&&n<all.length;}
+}
+function clearSel(){selIds.clear();document.querySelectorAll('.rc').forEach(c=>c.checked=false);syncSelBar();}
+function qSel(mode){
+  selIds.clear();
+  allOrders.filter(o=>o.level>=2).forEach(o=>{
+    const key=o.orderNumber||o.shopifyId;
+    if(mode==='all')selIds.add(key);
+    else if(mode==='l2'&&o.level===2)selIds.add(key);
+    else if(mode==='l3'&&o.level===3)selIds.add(key);
+    else if(mode==='noEmail'&&!(mgmt[key]||{}).emailSent)selIds.add(key);
+    else if(mode==='sensitive'&&(mgmt[key]||{}).sensitive)selIds.add(key);
+  });
+  renderOrders();
+}
+
+// ═══ EMAIL ═══
+function openSingleEmail(key){
+  const o=allOrders.find(x=>(x.orderNumber||x.shopifyId)===key);if(!o)return;
+  singleEmailOrderId=key;
+  const tpl=getTplForOrder(o);
+  document.getElementById('emailSub').textContent=`Para: ${o.name} <${o.email}> — Template: "${tpl.name}"`;
+  document.getElementById('emailSubj').value=tpl.subject;
+  const body=applyTpl(tpl.body,o);
+  document.getElementById('emailBody').value=body;
+  document.getElementById('emailPrev').textContent=body;
+  document.getElementById('emailConfirmBtn').onclick=confirmSingleEmail;
+  document.getElementById('emailModal').classList.add('open');
+}
+function confirmSingleEmail(){
+  if(!singleEmailOrderId)return;
+  const o=allOrders.find(x=>(x.orderNumber||x.shopifyId)===singleEmailOrderId);
+  const subj=document.getElementById('emailSubj').value;
+  const body=document.getElementById('emailBody').value;
+  const btn=document.getElementById('emailConfirmBtn');
+
+  // Update local state immediately
+  const m=mgmt[singleEmailOrderId]||{};
+  m.emailSent=true;m.emailSentCount=(m.emailSentCount||0)+1;
+  m.lastCommDate=new Date().toISOString();
+  if(m.status!=='resolvido')m.status='contactado';
+  mgmt[singleEmailOrderId]=m;
+  addHistEv(singleEmailOrderId,'email',`Email enviado: "${subj}"`,o?`Para: ${o.email}`:'');
+  addHistEv(singleEmailOrderId,'status','Estado → Contactado','automático após envio de email');
+
+  if(gasUrl && o && o.email){
+    btn.disabled=true;btn.textContent='A enviar...';
+    showEmailSendStatus('⏳ A enviar via Gmail...');
+    sendViaGmail(o.email, subj, body).then(result=>{
+      btn.disabled=false;btn.textContent='✉ Enviar';
+      if(result.success){
+        showEmailSendStatus(`✓ Email enviado para ${o.email}`);
+        setTimeout(()=>{closeModal('emailModal');renderOrders();updateStats();updateAlertPip();toast('✓ Email enviado pelo Gmail — estado: Contactado');},900);
+      } else {
+        showEmailSendStatus(`⚠ Erro ao enviar: ${result.error||'verifique o Apps Script'}. Registo guardado localmente.`,true);
+        setTimeout(()=>{closeModal('emailModal');renderOrders();updateStats();updateAlertPip();},2000);
+      }
+      save();
+    });
+  } else {
+    // No Gmail configured — mark as sent locally only
+    document.getElementById('gmailSendStatus').style.display='none';
+    closeModal('emailModal');renderOrders();updateStats();updateAlertPip();
+    const msg=gasUrl?'✓ Email registado (cliente sem email definido)':'✓ Email registado localmente — configure o Gmail para envio real';
+    toast(msg);
+    save();
+  }
+}
+function insModalVar(v){const ta=document.getElementById('emailBody');const s=ta.selectionStart,e=ta.selectionEnd;ta.value=ta.value.slice(0,s)+v+ta.value.slice(e);document.getElementById('emailPrev').textContent=ta.value;ta.focus();}
+
+// ═══ BULK ═══
+function openBulkDirect(){
+  if(!selIds.size){toast('Selecione pelo menos uma encomenda','warn');return;}
+  const ids=[...selIds];populateTplSelects();
+  const tplId=document.getElementById('bulkTplSel').value;
+  const tpl=templates.find(t=>t.id===tplId)||getActiveTpl();
+  const first=allOrders.find(o=>ids.includes(o.orderNumber||o.shopifyId));
+  document.getElementById('emailSub').textContent=`Enviar para ${ids.length} cliente(s)`;
+  document.getElementById('emailSubj').value=tpl.subject;
+  const body=first?applyTpl(tpl.body,first):tpl.body;
+  document.getElementById('emailBody').value=body;
+  document.getElementById('emailPrev').textContent=body;
+  document.getElementById('gmailSendStatus').style.display='none';
+  document.getElementById('emailConfirmBtn').onclick=async function(){
+    const subj=document.getElementById('emailSubj').value;
+    const btn=document.getElementById('emailConfirmBtn');
+    // Update local state
+    ids.forEach(id=>{
+      const m=mgmt[id]||{};m.emailSent=true;m.emailSentCount=(m.emailSentCount||0)+1;m.lastCommDate=new Date().toISOString();
+      if(m.status!=='resolvido')m.status='contactado';
+      mgmt[id]=m;
+      const o=allOrders.find(x=>(x.orderNumber||x.shopifyId)===id);
+      addHistEv(id,'email',`Email em massa: "${tpl.name}"`,o?`Para: ${o.email}`:'');
+      addHistEv(id,'status','Estado → Contactado','automático após envio de email');
+    });
+    save();
+    // Build email payloads
+    const emailList=ids.map(id=>{
+      const o=allOrders.find(x=>(x.orderNumber||x.shopifyId)===id);
+      if(!o||!o.email)return null;
+      return{to:o.email,subject:subj,body:applyTpl(tpl.body,o)};
+    }).filter(Boolean);
+    if(gasUrl && emailList.length){
+      btn.disabled=true;btn.textContent='A enviar...';
+      showEmailSendStatus(`⏳ A enviar ${emailList.length} emails via Gmail...`);
+      const result=await sendBulkViaGmail(emailList);
+      btn.disabled=false;btn.textContent='✉ Enviar';
+      if(result.success){
+        showEmailSendStatus(`✓ ${emailList.length} emails enviados pelo Gmail`);
+        setTimeout(()=>{closeModal('emailModal');clearSel();renderOrders();updateStats();updateAlertPip();toast(`✓ ${emailList.length} emails enviados — estados: Contactado`);},900);
+      } else {
+        showEmailSendStatus(`⚠ Erro: ${result.error||'verifique o Apps Script'}`,true);
+        setTimeout(()=>{closeModal('emailModal');clearSel();renderOrders();updateStats();updateAlertPip();},2000);
+      }
+    } else {
+      closeModal('emailModal');clearSel();renderOrders();updateStats();updateAlertPip();
+      toast(gasUrl?`✓ ${ids.length} registados (sem emails)`:`✓ ${ids.length} registados — configure Gmail para envio real`);
+    }
+    document.getElementById('emailConfirmBtn').onclick=confirmSingleEmail;
+  };
+  document.getElementById('emailModal').classList.add('open');
+}
+
+function openBulkReview(){
+  if(!selIds.size){toast('Selecione pelo menos uma encomenda','warn');return;}
+  bulkReviewIds=[...selIds];populateTplSelects();renderRecipList();refreshBulkPrev();
+  document.getElementById('bulkModal').classList.add('open');
+}
+function renderRecipList(){
+  const cnt=bulkReviewIds.length;
+  document.getElementById('bulkCnt').textContent=cnt;
+  document.getElementById('bulkSub').textContent=`${cnt} destinatário(s)`;
+  document.getElementById('bulkSendCnt').textContent=cnt;
+  const list=document.getElementById('recipList');
+  list.innerHTML=bulkReviewIds.map(id=>{
+    const o=allOrders.find(x=>(x.orderNumber||x.shopifyId)===id);if(!o)return'';
+    const lc=o.level===2?'color:var(--l2)':'color:var(--l3)';
+    return`<div data-rid="${id}" style="display:flex;align-items:center;gap:7px;padding:7px 10px;border-bottom:1px solid var(--bd)">
+<span style="font-size:9px;padding:1px 6px;border-radius:4px;${lc};background:${o.level===2?'var(--l2b)':'var(--l3b)'};border:1px solid ${o.level===2?'var(--l2d)':'var(--l3d)'};font-family:var(--fm);font-weight:700;flex-shrink:0">${o.level===2?'N2':'N3'}</span>
+<div style="flex:1;min-width:0"><div style="font-size:11px;font-weight:600;color:var(--tx);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${o.name}</div><div style="font-size:10px;color:var(--tx3)">${o.email||'—'}</div></div>
+<button onclick="removeRecip('${id}')" style="background:none;border:none;cursor:pointer;color:var(--tx3);font-size:14px;padding:0 2px">×</button>
+</div>`;
+  }).join('');
+}
+function removeRecip(id){bulkReviewIds=bulkReviewIds.filter(x=>x!==id);selIds.delete(id);const cb=document.querySelector(`.rc[data-id="${id}"]`);if(cb)cb.checked=false;syncSelBar();if(!bulkReviewIds.length){closeModal('bulkModal');return;}renderRecipList();refreshBulkPrev();}
+function addBulkLevel(lvl){allOrders.filter(o=>o.level===lvl&&!bulkReviewIds.includes(o.orderNumber||o.shopifyId)).forEach(o=>{const k=o.orderNumber||o.shopifyId;bulkReviewIds.push(k);selIds.add(k);});renderRecipList();refreshBulkPrev();syncSelBar();renderOrders();}
+function refreshBulkPrev(){
+  const tplId=document.getElementById('bulkRevTpl').value;
+  const tpl=templates.find(t=>t.id===tplId)||getActiveTpl();
+  const firstId=bulkReviewIds[0];
+  const o=allOrders.find(x=>(x.orderNumber||x.shopifyId)===firstId)||{name:'Ana Silva',orderNumber:'ORD-1042',days:4,createdDate:new Date()};
+  document.getElementById('bulkPrev').textContent=applyTpl(tpl.body,o);
+}
+function toggleDiff(lvl){const cb=document.getElementById('dL'+lvl);const sel=document.getElementById('dL'+lvl+'Tpl');sel.disabled=!cb.checked;sel.style.opacity=cb.checked?'1':'.5';}
+async function confirmBulkSend(){
+  const defTplId=document.getElementById('bulkRevTpl').value;
+  const useL2=document.getElementById('dL2').checked;const useL3=document.getElementById('dL3').checked;
+  const l2Id=document.getElementById('dL2Tpl').value;const l3Id=document.getElementById('dL3Tpl').value;
+  const emailList=[];
+  bulkReviewIds.forEach(id=>{
+    const o=allOrders.find(x=>(x.orderNumber||x.shopifyId)===id);const m=mgmt[id]||{};
+    m.emailSent=true;m.emailSentCount=(m.emailSentCount||0)+1;m.lastCommDate=new Date().toISOString();
+    if(m.status!=='resolvido')m.status='contactado';
+    let useTpl;
+    if(useL2&&o&&o.level===2)useTpl=templates.find(t=>t.id===l2Id)||getActiveTpl();
+    else if(useL3&&o&&o.level===3)useTpl=templates.find(t=>t.id===l3Id)||getActiveTpl();
+    else useTpl=templates.find(t=>t.id===defTplId)||getActiveTpl();
+    m.lastTpl=useTpl.name;mgmt[id]=m;
+    addHistEv(id,'email',`Email (revisão): "${useTpl.name}"`,o?`Para: ${o.email}`:'');
+    addHistEv(id,'status','Estado → Contactado','automático após envio de email');
+    if(o&&o.email) emailList.push({to:o.email,subject:useTpl.subject,body:applyTpl(useTpl.body,o)});
+  });
+  save();
+  const n=bulkReviewIds.length;
+  closeModal('bulkModal');clearSel();renderOrders();updateStats();updateAlertPip();
+  if(gasUrl && emailList.length){
+    toast(`⏳ A enviar ${emailList.length} emails pelo Gmail...`);
+    const result=await sendBulkViaGmail(emailList);
+    toast(result.success?`✓ ${emailList.length} emails enviados pelo Gmail — estados: Contactado`:`⚠ Erro no Gmail — ${n} registados localmente`);
+  } else {
+    toast(gasUrl?`✓ ${n} registados (sem emails definidos)`:`✓ ${n} registados localmente — configure Gmail para envio real`);
+  }
+}
+
+// ═══ TEMPLATES ═══
+function populateTplSelects(){
+  const opts=templates.map(t=>`<option value="${t.id}">${t.name}</option>`).join('');
+  ['bulkTplSel','bulkRevTpl','dL2Tpl','dL3Tpl'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML=opts;});
+  const act=getActiveTpl();['bulkTplSel','bulkRevTpl'].forEach(id=>{const el=document.getElementById(id);if(el&&act)el.value=act.id;});
+}
+function renderTplTable(){
+  const lvlLabel=(s)=>({nivel2:'Nível 2',nivel3:'Nível 3'}[s]||s||'Padrão');
+  const tb=document.getElementById('tplBody');
+  tb.innerHTML=templates.map(t=>`<tr>
+<td style="text-align:center"><button onclick="setActiveTpl('${t.id}')" style="background:none;border:none;cursor:pointer;font-size:16px" title="${t.active?'Ativo':'Definir como ativo'}">${t.active?'⭐':'☆'}</button></td>
+<td><div style="font-weight:700;font-size:12px;color:var(--pg)">${t.name}</div><div style="font-size:10px;color:var(--tx3);margin-top:1px">${t.body.substring(0,50).replace(/\n/g,' ')}…</div></td>
+<td style="font-size:11px;font-weight:600;color:var(--tx2)">${lvlLabel(t.statusMatch)}</td>
+<td class="td-m">${t.subject}</td>
+<td class="td-m" style="font-size:10px">${fmtDate(t.updatedAt)}</td>
+<td><div style="display:flex;gap:4px">
+<button class="btn btn-g btn-xs" onclick="openEditTpl('${t.id}')">✏</button>
+<button class="btn btn-g btn-xs" onclick="prevTpl('${t.id}')">👁</button>
+${templates.length>1&&!t.active?`<button class="btn btn-xs btn-l3" onclick="delTpl('${t.id}')">✕</button>`:''}
+</div></td>
+</tr>`).join('');
+  const act=getActiveTpl();document.getElementById('activeTplName').textContent=act?act.name:'—';
+}
+function setActiveTpl(id){templates.forEach(t=>t.active=t.id===id);renderTplTable();populateTplSelects();save();toast('✓ Template ativo atualizado');}
+function openNewTpl(){editingTplId=null;document.getElementById('edTitle').textContent='Novo template';document.getElementById('edSub').textContent='';['edName','edSubject','edBody'].forEach(i=>document.getElementById(i).value='');document.getElementById('edStatus').value='';document.getElementById('edPrev').textContent='';document.getElementById('tplEditor').style.display='block';document.getElementById('tplEditor').scrollIntoView({behavior:'smooth',block:'start'});}
+function openEditTpl(id){
+  const t=templates.find(x=>x.id===id);if(!t)return;editingTplId=id;
+  document.getElementById('edTitle').textContent='Editar: '+t.name;document.getElementById('edSub').textContent='';
+  document.getElementById('edName').value=t.name;document.getElementById('edSubject').value=t.subject;
+  document.getElementById('edStatus').value=t.statusMatch||'';document.getElementById('edBody').value=t.body;syncEdPrev();
+  document.getElementById('tplEditor').style.display='block';document.getElementById('tplEditor').scrollIntoView({behavior:'smooth',block:'start'});
+}
+function closeEditor(){document.getElementById('tplEditor').style.display='none';editingTplId=null;}
+function saveTpl(){
+  const name=document.getElementById('edName').value.trim();const subject=document.getElementById('edSubject').value.trim();
+  const statusMatch=document.getElementById('edStatus').value;const body=document.getElementById('edBody').value.trim();
+  if(!name){toast('Indique um nome','warn');return;}if(!body){toast('Corpo não pode estar vazio','warn');return;}
+  if(editingTplId){const t=templates.find(x=>x.id===editingTplId);if(t){t.name=name;t.subject=subject;t.statusMatch=statusMatch;t.body=body;t.updatedAt=new Date();}}
+  else templates.push({id:'t'+Date.now(),name,subject,statusMatch,body,active:false,updatedAt:new Date()});
+  closeEditor();renderTplTable();populateTplSelects();save();toast('✓ Template guardado');
+}
+function delTpl(id){const t=templates.find(x=>x.id===id);if(t&&t.active){toast('Não pode apagar o ativo','warn');return;}templates=templates.filter(x=>x.id!==id);renderTplTable();populateTplSelects();save();toast('Template removido','warn');}
+function syncEdPrev(){
+  const body=document.getElementById('edBody').value;
+  const sample=allOrders.find(o=>o.level>=2)||{name:'Ana Silva',orderNumber:'ORD-1042',days:4,createdDate:new Date(),deliveryDate:new Date()};
+  document.getElementById('edPrev').textContent=applyTpl(body,sample);
+}
+function edInsert(v){const ta=document.getElementById('edBody');const s=ta.selectionStart,e=ta.selectionEnd;ta.value=ta.value.slice(0,s)+v+ta.value.slice(e);ta.focus();syncEdPrev();}
+function prevTpl(id){const t=templates.find(x=>x.id===id);if(!t)return;const sample=allOrders.find(o=>o.level>=2)||{name:'Ana Silva',orderNumber:'ORD-1042',days:4,createdDate:new Date(),deliveryDate:new Date()};document.getElementById('prevContent').textContent=applyTpl(t.body,sample);document.getElementById('prevModal').classList.add('open');}
+
+// ═══ HISTORY ═══
+function openHistory(key){
+  const o=allOrders.find(x=>(x.orderNumber||x.shopifyId)===key);
+  currentHistOrderId=key;
+  document.getElementById('histTitle').textContent=o?o.name:'Histórico';
+  document.getElementById('histSubt').textContent=(o?o.orderNumber||o.shopifyId:key)+(o?' · '+(o.email||''):'');
+  document.getElementById('histNewNote').value='';
+  renderTimeline(key);
+  document.getElementById('histModal').classList.add('open');
+}
+function renderTimeline(key){
+  const m=mgmt[key]||{};const history=[...(m.history||[])].reverse();
+  const tl=document.getElementById('histTimeline');
+  if(!history.length){tl.innerHTML='<div class="empty" style="padding:20px 0"><div class="empty-title">Sem eventos</div></div>';return;}
+  const icons={email:'📧',status:'🔄',note:'📝',call:'📞',manual:'✏️',upload:'📦',product:'🎁'};
+  tl.innerHTML=`<div class="hist-line"></div>`+history.map(e=>`
+<div class="hist-ev">
+  <div class="hist-dot ${e.type}"></div>
+  <div class="hist-content" style="flex:1;min-width:0">
+    <div class="hist-act">${icons[e.type]||'•'} ${e.action}</div>
+    ${e.detail?`<div class="hist-det">${e.detail}</div>`:''}
+    <div class="hist-ts">${fmtTs(e.ts)}</div>
+  </div>
+</div>`).join('');
+}
+function addManualEvent(){
+  const note=document.getElementById('histNewNote').value.trim();
+  if(!note||!currentHistOrderId){toast('Escreva uma nota','warn');return;}
+  addHistEv(currentHistOrderId,'manual','Evento manual',note);
+  document.getElementById('histNewNote').value='';
+  renderTimeline(currentHistOrderId);
+  toast('✓ Evento adicionado');
+}
+function clearHistory(){if(!currentHistOrderId)return;const m=mgmt[currentHistOrderId]||{};m.history=[];mgmt[currentHistOrderId]=m;save();renderTimeline(currentHistOrderId);toast('Histórico apagado','warn');}
+
+// ═══ HISTORY PAGE ═══
+function renderHistoryPage(){
+  const q=(document.getElementById('histSearch').value||'').toLowerCase();
+  const filter=document.getElementById('histFilter').value;
+  let events=[];
+  Object.entries(mgmt).forEach(([key,m])=>{
+    const o=allOrders.find(x=>(x.orderNumber||x.shopifyId)===key);
+    (m.history||[]).forEach(e=>events.push({...e,key,name:o?o.name:'—'}));
+  });
+  events.sort((a,b)=>new Date(b.ts)-new Date(a.ts));
+  if(filter!=='all')events=events.filter(e=>e.type===filter);
+  if(q)events=events.filter(e=>e.key.toLowerCase().includes(q)||e.name.toLowerCase().includes(q)||(e.action||'').toLowerCase().includes(q)||(e.detail||'').toLowerCase().includes(q));
+  const tbody=document.getElementById('histPageBody');
+  if(!events.length){tbody.innerHTML=`<tr><td colspan="5"><div class="empty"><div class="empty-icon">🕐</div><div class="empty-title">Sem eventos</div></div></td></tr>`;return;}
+  const tc={email:'var(--pg)',status:'var(--l2)',note:'var(--tx3)',call:'var(--l1)',manual:'var(--pink)',upload:'#c9a800',product:'#7c3aed'};
+  const tl={email:'Email',status:'Estado',note:'Nota',call:'Ligação',manual:'Manual',upload:'Upload',product:'Produto'};
+  const ic={email:'📧',status:'🔄',note:'📝',call:'📞',manual:'✏️',upload:'📦',product:'🎁'};
+  tbody.innerHTML=events.map(e=>`<tr>
+<td style="font-family:var(--fm);font-size:10px;color:var(--tx3);white-space:nowrap">${fmtTs(e.ts)}</td>
+<td><span class="tdmono">${e.key}</span></td>
+<td style="font-weight:600;font-size:12px">${e.name}</td>
+<td><span style="font-size:10px;color:${tc[e.type]||'var(--tx2)'};font-weight:700">${ic[e.type]||'•'} ${tl[e.type]||e.type}</span></td>
+<td style="font-size:12px">${e.action}${e.detail?`<div style="font-size:10px;color:var(--tx3);margin-top:1px">${e.detail}</div>`:''}</td>
+</tr>`).join('');
+}
+function exportHistoryCSV(){
+  let events=[];
+  Object.entries(mgmt).forEach(([key,m])=>{const o=allOrders.find(x=>(x.orderNumber||x.shopifyId)===key);(m.history||[]).forEach(e=>events.push({ts:fmtTs(e.ts),key,name:o?o.name:'—',type:e.type,action:e.action,detail:e.detail||''}));});
+  events.sort((a,b)=>new Date(b.ts)-new Date(a.ts));
+  if(!events.length){toast('Sem histórico para exportar','warn');return;}
+  const csv='Data/Hora,Encomenda,Cliente,Tipo,Ação,Detalhe\n'+events.map(e=>[e.ts,e.key,`"${e.name}"`,e.type,`"${e.action}"`,`"${e.detail}"`].join(',')).join('\n');
+  const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,\uFEFF'+encodeURIComponent(csv);a.download=`tarwi-historico-${new Date().toISOString().slice(0,10)}.csv`;a.click();toast('✓ CSV exportado');
+}
+
+// ═══ STATS ═══
+function updateStats(){
+  const l1=allOrders.filter(o=>o.level===1).length;const l2=allOrders.filter(o=>o.level===2).length;
+  const l3=allOrders.filter(o=>o.level===3).length;const tot=allOrders.length;if(!tot)return;
+  const actTot=l2+l3;const sent=Object.values(mgmt).filter(m=>m.emailSent).length;
+  const called=Object.values(mgmt).filter(m=>m.called).length;const resolved=Object.values(mgmt).filter(m=>m.status==='resolvido').length;
+  const sla=Math.round(l1/tot*100);
+  const bar=(n,d,col)=>d?`<div class="bf" style="width:${Math.round(n/d*100)}%;background:${col}"></div>`:'';
+  document.getElementById('stDistrib').innerHTML=[['N1 — em dia',l1,'var(--l1)'],['N2 — atenção',l2,'var(--l2)'],['N3 — crítico',l3,'var(--l3)']].map(([label,n,col])=>`<div class="bg"><div class="bl"><span>${label}</span><span>${n} (${Math.round(n/tot*100)}%)</span></div><div class="bt">${bar(n,tot,col)}</div></div>`).join('');
+  document.getElementById('stActions').innerHTML=[['Emails enviados',sent,actTot,'var(--pg)'],['Resolvidos',resolved,actTot,'var(--l1)']].map(([label,n,d,col])=>`<div class="bg"><div class="bl"><span>${label}</span><span>${n}/${d}</span></div><div class="bt">${bar(n,d||1,col)}</div></div>`).join('');
+  document.getElementById('stSLA').innerHTML=`<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px"><div><div style="font-size:9px;color:var(--tx3);margin-bottom:3px;text-transform:uppercase;letter-spacing:.07em;font-weight:700">SLA Geral</div><div style="font-family:var(--fm);font-size:24px;font-weight:500;color:${sla>=80?'var(--l1)':sla>=50?'var(--l2)':'var(--l3)'}">${sla}%</div></div><div><div style="font-size:9px;color:var(--tx3);margin-bottom:3px;text-transform:uppercase;letter-spacing:.07em;font-weight:700">% Crítico</div><div style="font-family:var(--fm);font-size:24px;font-weight:500;color:var(--l3)">${Math.round(l3/tot*100)}%</div></div><div><div style="font-size:9px;color:var(--tx3);margin-bottom:3px;text-transform:uppercase;letter-spacing:.07em;font-weight:700">Taxa Resolução</div><div style="font-family:var(--fm);font-size:24px;font-weight:500;color:var(--pg)">${actTot?Math.round(resolved/actTot*100):0}%</div></div></div>`;
+}
+
+// ═══ DEMO ═══
+function loadDemo(){
+  const now=new Date();const d=(n)=>new Date(now.getTime()-n*24*3600000);
+  // delivery date is the reference for delay
+  allOrders=[
+    {shopifyId:'SH-8801',orderNumber:'ORD-1041',name:'Ana Silva',email:'ana.silva@email.com',createdDate:d(5),deliveryDate:d(2),status:'Processing',days:bizDays(d(2),now),level:2,syncError:false},
+    {shopifyId:'SH-8802',orderNumber:'ORD-1042',name:'Pedro Costa',email:'pedro.costa@email.com',createdDate:d(8),deliveryDate:d(4),status:'Delayed',days:bizDays(d(4),now),level:2,syncError:false},
+    {shopifyId:'SH-8803',orderNumber:'ORD-1043',name:'Marta Oliveira',email:'marta.o@email.com',createdDate:d(14),deliveryDate:d(9),status:'Delayed',days:bizDays(d(9),now),level:3,syncError:false},
+    {shopifyId:'SH-8804',orderNumber:'ORD-1044',name:'João Ferreira',email:'joao.f@gmail.com',createdDate:d(16),deliveryDate:d(11),status:'Delayed',days:bizDays(d(11),now),level:3,syncError:false},
+    {shopifyId:'SH-8805',orderNumber:'ORD-1045',name:'Carla Mendes',email:'carla.m@hotmail.com',createdDate:d(3),deliveryDate:d(1),status:'Pending',days:bizDays(d(1),now),level:1,syncError:false},
+    {shopifyId:'SH-8806',orderNumber:'',name:'Bruno Santos',email:'b.santos@gmail.com',createdDate:d(5),deliveryDate:d(3),status:'Pending',days:bizDays(d(3),now),level:2,syncError:true},
+    {shopifyId:'SH-8807',orderNumber:'',name:'Inês Rodrigues',email:'ines.r@gmail.com',createdDate:d(10),deliveryDate:d(8),status:'Delayed',days:bizDays(d(8),now),level:3,syncError:true},
+    {shopifyId:'SH-8808',orderNumber:'ORD-1048',name:'Ricardo Nunes',email:'r.nunes@work.pt',createdDate:d(7),deliveryDate:d(5),status:'Delayed',days:bizDays(d(5),now),level:2,syncError:false},
+  ];
+  selIds.clear();mgmt={};updateDashboard();renderOrders();updateStats();populateTplSelects();updateAlertPip();
+  document.getElementById('totalCnt').textContent=allOrders.length+' encomendas';
+  document.getElementById('noData').style.display='none';
+  document.getElementById('uploadOk').style.display='inline-flex';
+  document.getElementById('uploadName').textContent='demo-tarwi.csv';
+  document.getElementById('lastUpd').textContent='Demo: '+new Date().toLocaleTimeString('pt-PT',{hour:'2-digit',minute:'2-digit'});
+  toast('✓ Dados de demonstração carregados');
+}
+
+// ═══ ALERTS SYSTEM ═══
+let currentAlertKey=null;
+let selectedAlertType='ligar';
+
+function openAlertModal(key, preType){
+  const o=allOrders.find(x=>(x.orderNumber||x.shopifyId)===key);
+  currentAlertKey=key;
+  document.getElementById('alertModalSub').textContent=o?`${o.name} · ${o.orderNumber||o.shopifyId}`:'';
+  const tom=new Date();tom.setDate(tom.getDate()+1);
+  document.getElementById('alertDate').value=tom.toISOString().slice(0,10);
+  document.getElementById('alertTime').value='09:00';
+  document.getElementById('alertNote').value='';
+  selectedAlertType=preType||'ligar';
+  document.querySelectorAll('.alert-type-btn').forEach(b=>b.classList.toggle('active',b.dataset.type===selectedAlertType));
+  document.getElementById('alertModal').classList.add('open');
+}
+
+function selectAlertType(btn){
+  selectedAlertType=btn.dataset.type;
+  document.querySelectorAll('.alert-type-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function saveAlert(){
+  const date=document.getElementById('alertDate').value;
+  const time=document.getElementById('alertTime').value;
+  const note=document.getElementById('alertNote').value.trim();
+  if(!date){toast('Selecione uma data para o alerta','warn');return;}
+  const m=mgmt[currentAlertKey]||{};
+  if(!m.alerts)m.alerts=[];
+  const alert={id:'al'+Date.now(),date,time,type:selectedAlertType,note,done:false,createdAt:new Date().toISOString()};
+  m.alerts.push(alert);
+  mgmt[currentAlertKey]=m;
+  const typeLabels={ligar:'Ligar',email:'Enviar email',verificar:'Verificar estado',outro:'Outro'};
+  addHistEv(currentAlertKey,'manual',`Alerta criado: ${typeLabels[selectedAlertType]}`,`${fmtAlertDate(date,time)}${note?' — '+note:''}`);
+  save();closeModal('alertModal');renderOrders();updateAlertPip();
+  toast('🔔 Alerta criado para '+fmtAlertDate(date,time));
+}
+
+function fmtAlertDate(date,time){
+  if(!date)return'—';
+  const d=new Date(date+'T'+(time||'00:00'));
+  return d.toLocaleDateString('pt-PT',{day:'2-digit',month:'2-digit',year:'numeric'})+(time?' às '+time:'');
+}
+
+function alertStatus(date,time){
+  const now=new Date();
+  const dt=new Date(date+'T'+(time||'23:59'));
+  const diffH=(dt-now)/3600000;
+  if(diffH<0)return'overdue';
+  if(diffH<24)return'due';
+  return'upcoming';
+}
+
+function openAlertsList(key){
+  const o=allOrders.find(x=>(x.orderNumber||x.shopifyId)===key);
+  currentAlertKey=key;
+  document.getElementById('alertsListSub').textContent=o?`${o.name} · ${o.orderNumber||o.shopifyId}`:'';
+  renderAlertsList(key);
+  document.getElementById('alertsListModal').classList.add('open');
+}
+
+function renderAlertsList(key){
+  const m=mgmt[key]||{};
+  const alerts=(m.alerts||[]).slice().sort((a,b)=>new Date(a.date+'T'+(a.time||'00:00'))-new Date(b.date+'T'+(b.time||'00:00')));
+  const typeLabels={ligar:'📞 Ligar',email:'✉ Email',verificar:'🔍 Verificar',outro:'📝 Outro'};
+  const container=document.getElementById('alertsListContent');
+  if(!alerts.length){
+    container.innerHTML='<div class="empty" style="padding:24px 0"><div class="empty-icon">🔔</div><div class="empty-title">Sem alertas</div>Crie o primeiro alerta para esta encomenda</div>';
+    return;
+  }
+  container.innerHTML=`<div style="border:1.5px solid var(--bd);border-radius:var(--r);overflow:hidden">`+
+    alerts.map((al,i)=>{
+      const st=al.done?'past':alertStatus(al.date,al.time);
+      return`<div class="alert-item ${st}" data-key="${key}" data-idx="${i}">
+        <div class="alert-dot-bell">${al.done?'✅':'🔔'}</div>
+        <div style="flex:1;min-width:0">
+          <div class="alert-item-date">${fmtAlertDate(al.date,al.time)}</div>
+          <div><span class="alert-item-type">${typeLabels[al.type]||al.type}</span>${st==='overdue'?'<span style="font-size:10px;color:var(--l3);font-weight:700;margin-left:6px">⚠ Em atraso</span>':st==='due'?'<span style="font-size:10px;color:var(--l2);font-weight:700;margin-left:6px">● Hoje</span>':''}</div>
+          ${al.note?`<div class="alert-item-note">${al.note}</div>`:''}
+        </div>
+        <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0">
+          ${!al.done?`<button class="btn btn-g btn-xs" onclick="markAlertDone('${key}',${i})" title="Marcar como feito">✓</button>`:''}
+          <button class="btn btn-xs" style="background:var(--l3b);color:var(--l3);border-color:var(--l3d)" onclick="deleteAlert('${key}',${i})" title="Apagar">✕</button>
+        </div>
+      </div>`;
+    }).join('')+'</div>';
+}
+
+function markAlertDone(key,idx){
+  const m=mgmt[key]||{};if(!m.alerts||!m.alerts[idx])return;
+  m.alerts[idx].done=true;mgmt[key]=m;
+  addHistEv(key,'manual',`Alerta concluído: ${m.alerts[idx].type}`,fmtAlertDate(m.alerts[idx].date,m.alerts[idx].time));
+  save();renderAlertsList(key);renderOrders();updateAlertPip();toast('✓ Alerta marcado como feito');
+}
+
+function deleteAlert(key,idx){
+  const m=mgmt[key]||{};if(!m.alerts)return;
+  m.alerts.splice(idx,1);mgmt[key]=m;
+  save();renderAlertsList(key);renderOrders();updateAlertPip();toast('Alerta removido','warn');
+}
+
+function countPendingAlerts(){
+  let count=0;
+  Object.values(mgmt).forEach(m=>{
+    (m.alerts||[]).forEach(al=>{if(!al.done)count++;});
+  });
+  return count;
+}
+
+// update alert pip to also count pending alerts
+function updateAlertPip(){
+  const syncErrs=allOrders.filter(o=>o.syncError).length;
+  const critDelay=allOrders.filter(o=>o.level===3).length;
+  const toContact=allOrders.filter(o=>o.level>=2&&!(mgmt[o.orderNumber||o.shopifyId]||{}).emailSent).length;
+  const pendingAlerts=countPendingAlerts();
+  const total=syncErrs+critDelay+toContact+pendingAlerts;
+  const pip=document.getElementById('alertPip');
+  pip.style.display=total>0?'inline':'none';
+  pip.textContent=total;
+}
+
+// ═══ GMAIL INTEGRATION ═══
+let gasUrl = '';
+
+function loadGmailSettings(){
+  try{ gasUrl=localStorage.getItem('tw_gas_url')||''; }catch(e){}
+  updateGmailStatusUI();
+}
+
+function saveGmailSettings(){
+  const url=document.getElementById('gasUrl').value.trim();
+  if(!url){toast('Cole o URL do Apps Script','warn');return;}
+  if(!url.startsWith('https://script.google.com')){toast('URL inválido — deve começar com https://script.google.com','warn');return;}
+  gasUrl=url;
+  try{localStorage.setItem('tw_gas_url',gasUrl);}catch(e){}
+  updateGmailStatusUI();
+  closeModal('gmailSettingsModal');
+  toast('✓ Gmail configurado — faça um teste de envio');
+}
+
+function openGmailSettings(){
+  document.getElementById('gasUrl').value=gasUrl||'';
+  document.getElementById('gasTestResult').style.display='none';
+  document.getElementById('gmailSettingsModal').classList.add('open');
+}
+
+function updateGmailStatusUI(){
+  const dot=document.getElementById('gmailDot');
+  const txt=document.getElementById('gmailStatusText');
+  if(gasUrl){
+    dot.style.background='#4ade80';
+    txt.textContent='Gmail ligado';
+    txt.style.color='rgba(74,222,128,.7)';
+  } else {
+    dot.style.background='rgba(255,255,248,.2)';
+    txt.textContent='Gmail não configurado';
+    txt.style.color='rgba(255,255,248,.3)';
+  }
+}
+
+async function testGmailConnection(){
+  const url=document.getElementById('gasUrl').value.trim();
+  if(!url){toast('Cole primeiro o URL','warn');return;}
+  const btn=document.getElementById('gasTestBtn');
+  const res=document.getElementById('gasTestResult');
+  btn.textContent='A testar...';btn.disabled=true;
+  res.style.display='none';
+  try{
+    // GET with ?action=test — fully readable cross-origin
+    const r=await fetch(url+'?action=test');
+    const data=await r.json();
+    res.style.display='block';
+    if(data.status==='ok'){
+      res.style.background='rgba(46,139,87,.1)';res.style.border='1px solid rgba(46,139,87,.3)';res.style.color='var(--l1)';
+      res.textContent=`✓ Ligado com sucesso! A enviar como: ${data.email}`;
+    } else {
+      res.style.background='var(--l3b)';res.style.border='1px solid var(--l3d)';res.style.color='var(--l3)';
+      res.textContent='✗ Script respondeu com erro: '+(data.error||'desconhecido');
+    }
+  }catch(err){
+    res.style.display='block';
+    res.style.background='var(--l3b)';res.style.border='1px solid var(--l3d)';res.style.color='var(--l3)';
+    res.textContent='✗ Sem resposta. Verifique o URL e se "Quem tem acesso" está em "Qualquer pessoa".';
+  }
+  btn.textContent='🔌 Testar ligação';btn.disabled=false;
+}
+
+async function sendViaGmail(to, subject, body){
+  if(!gasUrl||!to) return {success:false,error:'Gmail não configurado ou email em falta'};
+  try{
+    // Use GET with encoded params — works cross-origin without CORS issues
+    const params=new URLSearchParams({
+      action:'send',
+      to,
+      subject,
+      body
+    });
+    const r=await fetch(gasUrl+'?'+params.toString());
+    const data=await r.json();
+    return data;
+  }catch(err){
+    return {success:false,error:err.message};
+  }
+}
+
+async function sendBulkViaGmail(emails){
+  if(!gasUrl) return {success:false,error:'Gmail não configurado'};
+  try{
+    // For bulk, encode the array as JSON in a single param
+    // Split into chunks of 20 to stay within URL length limits
+    const chunks=[];
+    for(let i=0;i<emails.length;i+=20) chunks.push(emails.slice(i,i+20));
+    let totalSent=0, totalFailed=0;
+    for(const chunk of chunks){
+      const params=new URLSearchParams({
+        action:'bulk',
+        data:JSON.stringify(chunk)
+      });
+      const r=await fetch(gasUrl+'?'+params.toString());
+      const data=await r.json();
+      if(data.sent) totalSent+=data.sent;
+      if(data.failed) totalFailed+=data.failed;
+    }
+    return {success:true,sent:totalSent,failed:totalFailed};
+  }catch(err){
+    return {success:false,error:err.message};
+  }
+}
+
+function showEmailSendStatus(msg, isError=false){
+  const el=document.getElementById('gmailSendStatus');
+  el.style.display='block';
+  el.style.background=isError?'var(--l3b)':'rgba(46,139,87,.1)';
+  el.style.border=isError?'1px solid var(--l3d)':'1px solid rgba(46,139,87,.3)';
+  el.style.color=isError?'var(--l3)':'var(--l1)';
+  el.textContent=msg;
+}
+
+// ═══ INIT ═══
+load();
+loadGmailSettings();
+renderTplTable();
+populateTplSelects();
+if(allOrders.length>0){
+  document.getElementById('noData').style.display='none';
+  document.getElementById('totalCnt').textContent=allOrders.length+' encomendas';
+  document.getElementById('lastUpd').textContent='Dados locais restaurados';
+  updateDashboard();
+  renderOrders();
+  updateStats();
+} else if(Object.keys(mgmt).length>0){
+  document.getElementById('lastUpd').textContent='Dados locais guardados';
+}
+updateAlertPip();
+</script>
+</body>
+</html>
